@@ -147,7 +147,12 @@ function mapError(
     }
   }
 
-  if (messageLower.includes('not found') || messageLower.includes('model')) {
+  if (
+    messageLower.includes('model not found') ||
+    messageLower.includes('model does not exist') ||
+    messageLower.includes('model not available') ||
+    (messageLower.includes('not found') && messageLower.includes('model'))
+  ) {
     return {
       status: 400,
       body: {

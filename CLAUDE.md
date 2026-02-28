@@ -27,9 +27,9 @@ npm run test:e2e     # Run Playwright E2E tests
 npm run lint         # ESLint
 npm run format       # Prettier auto-format
 npm run format:check # Prettier check (CI-friendly)
+npm run dev:proxy    # Cloudflare proxy local dev (requires `npm run build` first)
+npm run typecheck:functions  # Typecheck functions/ directory
 ```
-
-Cloudflare proxy local dev: `wrangler pages dev`
 
 ## Architecture
 
@@ -61,7 +61,7 @@ Client-orchestrated: SPA reads latest responses from each model, constructs mess
 
 13 sequential phases defined in `docs/IMPLEMENTATION-PLAN.md`. Key dependency: Phases 2-3 (data layer, app shell) and Phase 4 (proxy) can run in parallel. Phases 7-9 parallelize after Phase 6.
 
-**Current status:** Phase 3 complete. App shell and layout (Zustand store, TopBar, ConversationSidebar, ModelColumn, InputBar) implemented and tested. Data layer (Phase 2) provides persistence via Dexie.js.
+**Current status:** Phase 4 complete. API proxy (Cloudflare Pages Function at `POST /api/chat`) implemented and tested. Streams AI responses from Claude, ChatGPT, and Gemini with CORS support, request validation, and structured error handling. App shell (Phase 3) provides layout, data layer (Phase 2) provides persistence.
 
 ## Workflow: /implement Skill
 

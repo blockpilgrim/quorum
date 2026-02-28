@@ -27,3 +27,29 @@ Significant decisions made during implementation. Referenced by CLAUDE.md's Comp
 **Decision:** Add `"exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/test"]` to `tsconfig.app.json`. Test files get their types from Vitest's own configuration.
 
 **Consequence:** `tsc -b` (used in `npm run build`) only checks application code. Vitest handles type-checking test files separately.
+
+---
+
+## 003: UI Message Stream format for proxy responses
+
+**Date:** 2026-02-28
+**Phase:** 4
+
+**Context:** The AI SDK offers multiple stream response formats: `toTextStreamResponse()` (plain text stream), `toDataStreamResponse()` (data protocol stream), and `toUIMessageStreamResponse()` (UI message stream). The proxy needs to return a format that the client-side `useChat` hook can consume.
+
+**Decision:** Use `toUIMessageStreamResponse()` which outputs the UI message stream protocol compatible with AI SDK v6's `useChat` hook.
+
+**Consequence:** The client can use `useChat({ streamProtocol: 'ui-message' })` (the default in v6) without custom parsing. Token usage metadata is included in the stream. Mid-stream errors are surfaced via the `onError` callback.
+
+---
+
+## 004: Provider type duplicated between SPA and functions
+
+**Date:** 2026-02-28
+**Phase:** 4
+
+**Context:** The `Provider` type (`'claude' | 'chatgpt' | 'gemini'`) is needed in both `src/lib/db/types.ts` (SPA) and `functions/api/chat.ts` (proxy). The functions directory has its own TypeScript project and cannot import from `src/`.
+
+**Decision:** Duplicate the type definition in both locations. Do not create a shared types package.
+
+**Consequence:** If the provider list changes, both files must be updated. This is acceptable given the type is a simple union of 3 literals that changes rarely. A shared package can be extracted later if needed.

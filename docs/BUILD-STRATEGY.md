@@ -40,7 +40,7 @@
 
 OpenAI does not officially document or guarantee CORS headers, and they've broken multiple times (Oct 2025, Jan 2026). Gemini flat-out blocks browser requests. Only Anthropic explicitly supports it. Building a "direct from browser" architecture means one provider works reliably, one works sometimes, and one doesn't work at all. That's not a foundation to build on.
 
-A Cloudflare Worker solves this uniformly: it receives requests from the SPA, calls the AI provider APIs server-side (no CORS issue), and streams responses back with proper CORS headers. It's ~50 lines of code, deploys in minutes, and the free tier gives 100,000 requests/day — more than enough for single-user daily driving.
+A Cloudflare Worker solves this uniformly: it receives requests from the SPA, calls the AI provider APIs server-side (no CORS issue), and streams responses back with proper CORS headers. It's ~350 lines of code (including request validation, error mapping, and CORS handling), deploys in minutes, and the free tier gives 100,000 requests/day — more than enough for single-user daily driving.
 
 **Trade-off**: This is technically "a backend," despite the spec saying "no backend." But it's a stateless pass-through function, not an application server. It has no database, no sessions, no business logic. The alternative — hybrid direct-call for some providers and proxy for others — adds code path complexity for no real benefit.
 
@@ -264,7 +264,7 @@ Testing should be proportional to risk. For a single-user tool, the highest-risk
 
 - Styling and layout (visual regression testing is high-maintenance, low-value for a solo project)
 - Third-party library internals (don't test that Dexie writes to IndexedDB correctly — test that your code uses Dexie correctly)
-- The proxy in isolation (it's a pass-through; test it through E2E flows)
+- The proxy's provider API calls (mock the AI SDK; test request validation, error mapping, and CORS handling)
 
 ### Approach
 

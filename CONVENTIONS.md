@@ -18,6 +18,9 @@ src/
     utils.ts     # Utility functions (cn(), helpers)
   hooks/         # Custom React hooks
   test/          # Test setup and shared test utilities
+functions/       # Cloudflare Pages Functions (API proxy)
+  api/
+    chat.ts      # POST /api/chat — provider proxy endpoint
 e2e/             # Playwright E2E tests
 docs/            # Project documentation
 ```
@@ -387,3 +390,27 @@ export const onRequestPost: PagesFunction = async (context) => {
 - Use the AI SDK's `onError` callback in `toUIMessageStreamResponse()` for mid-stream errors
 
 **Why**: The SPA can display consistent error UI regardless of which provider failed. The error shape is the same for pre-stream (HTTP response) and mid-stream (stream event) errors.
+
+---
+
+## Testing Cloudflare Pages Functions
+
+**When to use**: When writing tests for code in `functions/`.
+
+- Test files co-locate with source: `functions/api/chat.ts` → `functions/api/chat.test.ts`
+- `functions/tsconfig.json` excludes `**/*.test.ts` (test files rely on Vitest for types)
+- `vitest.config.ts` includes `functions/**/*.test.ts` alongside `src/` tests
+- Mock AI SDK modules with `vi.mock()` factories declared before imports
+- Create helper functions to build mock `EventContext` objects for `PagesFunction` handlers
+- Test through exported handlers (`onRequestPost`, `onRequestOptions`), not internal functions
+
+**Example** (mock pattern for AI SDK):
+```ts
+const mockStreamText = vi.fn()
+vi.mock('ai', () => ({ streamText: mockStreamText }))
+
+const mockCreateAnthropic = vi.fn()
+vi.mock('@ai-sdk/anthropic', () => ({ createAnthropic: mockCreateAnthropic }))
+```
+
+**Why**: Functions have their own TypeScript project and cannot share types with Vitest globals. Mocking at the module boundary keeps tests fast and avoids real API calls.
