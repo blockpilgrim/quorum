@@ -13,6 +13,7 @@ src/
   components/
     ui/          # shadcn/ui primitives (auto-generated, do not hand-edit)
   lib/           # Shared utilities (cn(), helpers)
+    db/          # Data layer (Dexie schema, types, data access functions)
   hooks/         # Custom React hooks
   test/          # Test setup and shared test utilities
 e2e/             # Playwright E2E tests
@@ -153,6 +154,39 @@ Place a single smoke-test file at `src/components/ui-components.test.tsx` (outsi
 - **`devDependencies`**: Build-time, test-time, or lint-time only tools (Vite, Tailwind, Vitest, ESLint, Prettier, Playwright, shadcn CLI, etc.)
 
 **Why**: Keeps the dependency manifest accurate even though Vite tree-shakes everything regardless.
+
+---
+
+## Data Layer (Dexie.js)
+
+**When to use**: For all persistent data operations (conversations, messages, settings).
+
+- Database schema is defined in `src/lib/db/schema.ts` as a singleton `db` instance
+- TypeScript types for all tables live in `src/lib/db/types.ts`
+- Data access functions are organized by table: `conversations.ts`, `messages.ts`, `settings.ts`
+- Barrel export at `src/lib/db/index.ts` re-exports everything
+- Import from `@/lib/db` for all data layer access
+
+**Example**:
+```ts
+import {
+  createConversation,
+  addMessage,
+  getSettings,
+  type Conversation,
+  type Provider,
+} from '@/lib/db'
+```
+
+**Why**: Keeps the data layer modular and testable. The barrel export provides a clean public API while internal files can be refactored freely. Separating types from schema from access functions prevents circular dependencies.
+
+### Data Access Function Conventions
+- All functions are `async` (Dexie operations return Promises)
+- Create functions accept `*Input` types and return the auto-generated `id`
+- Timestamps (`createdAt`, `updatedAt`, `timestamp`) are set automatically by the access functions, not the caller
+- `updateConversation` auto-bumps `updatedAt`
+- `deleteConversation` cascades to messages using a Dexie transaction
+- Settings is a singleton (always `id=1`); `getSettings()` auto-initializes on first run
 
 ---
 

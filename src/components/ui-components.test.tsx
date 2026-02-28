@@ -21,9 +21,7 @@ import {
 describe('Button', () => {
   it('renders with children text', () => {
     render(<Button>Click me</Button>)
-    expect(
-      screen.getByRole('button', { name: 'Click me' }),
-    ).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Click me' })).toBeInTheDocument()
   })
 
   it('renders as disabled when disabled prop is set', () => {

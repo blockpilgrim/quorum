@@ -4,7 +4,7 @@ Each phase produces a working, testable increment. Phases are sequential — lat
 
 ---
 
-## Phase 1: Project Scaffold & Dev Environment
+- [x] ## Phase 1: Project Scaffold & Dev Environment
 
 **Goal**: Empty app runs locally with all tooling configured.
 
@@ -36,7 +36,7 @@ Each phase produces a working, testable increment. Phases are sequential — lat
 
 ---
 
-## Phase 2: Data Layer
+- [ ] ## Phase 2: Data Layer
 
 **Goal**: Conversations and messages can be created, read, and queried from IndexedDB. No UI beyond a dev-mode test harness if needed.
 
@@ -62,7 +62,7 @@ Each phase produces a working, testable increment. Phases are sequential — lat
 
 ---
 
-## Phase 3: App Shell & Layout
+- [ ] ## Phase 3: App Shell & Layout
 
 **Goal**: The three-column (desktop) / stacked (mobile) layout renders with placeholder content. Navigation between conversations works.
 
@@ -98,7 +98,7 @@ Each phase produces a working, testable increment. Phases are sequential — lat
 
 ---
 
-## Phase 4: API Proxy (Cloudflare Worker)
+- [ ] ## Phase 4: API Proxy (Cloudflare Worker)
 
 **Goal**: A deployed Cloudflare Pages Function that accepts a request with a model provider, API key, and message history, then streams the response back.
 
@@ -127,7 +127,7 @@ Each phase produces a working, testable increment. Phases are sequential — lat
 
 ---
 
-## Phase 5: Streaming Chat — Single Provider
+- [ ] ## Phase 5: Streaming Chat — Single Provider
 
 **Goal**: User can type a message and see a streaming response from one provider (start with Claude). Messages persist across reloads.
 
@@ -163,7 +163,7 @@ Each phase produces a working, testable increment. Phases are sequential — lat
 
 ---
 
-## Phase 6: Tri-Model Streaming
+- [ ] ## Phase 6: Tri-Model Streaming
 
 **Goal**: A single user message fans out to all three providers concurrently. Each column streams independently.
 
@@ -192,7 +192,7 @@ Each phase produces a working, testable increment. Phases are sequential — lat
 
 ---
 
-## Phase 7: Settings & API Key Management
+- [ ] ## Phase 7: Settings & API Key Management
 
 **Goal**: User can enter API keys and select models per provider. Settings persist.
 
@@ -223,7 +223,7 @@ Each phase produces a working, testable increment. Phases are sequential — lat
 
 ---
 
-## Phase 8: Cross-Feed
+- [ ] ## Phase 8: Cross-Feed
 
 **Goal**: User can trigger a cross-feed round that sends each model the other two models' latest responses.
 
@@ -254,7 +254,7 @@ Each phase produces a working, testable increment. Phases are sequential — lat
 
 ---
 
-## Phase 9: Conversation Management
+- [ ] ## Phase 9: Conversation Management
 
 **Goal**: Full conversation lifecycle — create, switch, rename, delete.
 
@@ -282,7 +282,7 @@ Each phase produces a working, testable increment. Phases are sequential — lat
 
 ---
 
-## Phase 10: Token Usage & Cost Display
+- [ ] ## Phase 10: Token Usage & Cost Display
 
 **Goal**: User can see token counts and estimated costs.
 
@@ -305,7 +305,7 @@ Each phase produces a working, testable increment. Phases are sequential — lat
 
 ---
 
-## Phase 11: Export
+- [ ] ## Phase 11: Export
 
 **Goal**: User can export conversations as JSON or Markdown files.
 
@@ -333,7 +333,7 @@ Each phase produces a working, testable increment. Phases are sequential — lat
 
 ---
 
-## Phase 12: Polish & PWA
+- [ ] ## Phase 12: Polish & PWA
 
 **Goal**: Production-quality UX. Installable on mobile.
 
@@ -367,7 +367,7 @@ Each phase produces a working, testable increment. Phases are sequential — lat
 
 ---
 
-## Phase 13: Deployment
+- [ ] ## Phase 13: Deployment
 
 **Goal**: App is live on Cloudflare Pages with the proxy function.
 
