@@ -1,0 +1,7 @@
+{
+  // Cloudflare Pages configuration for local development.
+  // Pages Functions in functions/ are automatically detected and deployed.
+  "name": "cortex",
+  "compatibility_date": "2025-01-01",
+  "pages_build_output_dir": "dist",
+}

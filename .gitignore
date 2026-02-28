@@ -40,3 +40,6 @@ blob-report/
 
 # Vitest
 coverage/
+
+# Cloudflare
+.wrangler/
