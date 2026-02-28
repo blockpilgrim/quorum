@@ -414,3 +414,109 @@ vi.mock('@ai-sdk/anthropic', () => ({ createAnthropic: mockCreateAnthropic }))
 ```
 
 **Why**: Functions have their own TypeScript project and cannot share types with Vitest globals. Mocking at the module boundary keeps tests fast and avoids real API calls.
+
+---
+
+## useProviderChat Hook Pattern
+
+**When to use**: For all provider chat instances in model columns.
+
+- One `useProviderChat` instance per provider column, wrapping `@ai-sdk/react`'s `useChat`
+- `DefaultChatTransport` created once via `useMemo([], [])`, reads dynamic values (provider, model, API key) through refs at request time
+- `prepareSendMessagesRequest` callback reads API key from Dexie settings, converts `UIMessage` parts to `{role, content}` for the proxy
+- Persistence sync: user messages saved to Dexie on `send()`, assistant messages on `onFinish`
+- Message seeding: loads from Dexie when `conversationId` changes, clears on null
+- Streaming status synced to Zustand store via `useEffect` for cross-component reactivity
+
+**Example**:
+```tsx
+const { messages, send, isLoading, error, stop, clearError } = useProviderChat({
+  provider: 'claude',
+  conversationId: activeConversationId,
+  model: 'claude-sonnet-4-20250514',
+})
+```
+
+**Why**: Encapsulates all streaming, persistence, and state sync concerns in a single hook. Each column is fully self-contained — the parent only needs to call `send()`.
+
+---
+
+## Imperative Ref Pattern for Cross-Component Messaging
+
+**When to use**: When a parent needs to trigger actions on child components (e.g., sending messages to multiple columns concurrently).
+
+- Child exposes a handle type via `forwardRef` + `useImperativeHandle`
+- Parent stores a `useRef<HandleType>` and calls methods in event handlers (never during render)
+- Streaming/loading status shared via Zustand store, not by reading refs during render
+
+**Example**:
+```tsx
+// Child component
+export interface ModelColumnHandle {
+  send: (text: string) => Promise<boolean>
+}
+
+export const ModelColumn = memo(
+  forwardRef(function ModelColumn(props, ref: ForwardedRef<ModelColumnHandle>) {
+    useImperativeHandle(ref, () => ({ send }), [send])
+    // ...
+  }),
+)
+
+// Parent
+const claudeRef = useRef<ModelColumnHandle>(null)
+const handleSend = async (text: string) => {
+  await claudeRef.current?.send(text)
+}
+```
+
+**Why**: Avoids prop-drilling callback chains and keeps the parent's send orchestration imperative while each column manages its own streaming state.
+
+---
+
+## Streaming Status via Zustand Store
+
+**When to use**: When hook-local state (like `useChat`'s `status`) needs to be read by sibling or parent components during render.
+
+- Each `useProviderChat` syncs its loading state to `useAppStore.streamingStatus[provider]` via `useEffect`
+- Other components read `streamingStatus` from the store with granular selectors
+- Never read imperative handle refs during render (violates React 19 rules)
+
+**Example**:
+```tsx
+// Inside useProviderChat
+useEffect(() => {
+  const isActive = status === 'submitted' || status === 'streaming'
+  setStreamingStatus(provider, isActive)
+}, [status, provider, setStreamingStatus])
+
+// In InputBar or App
+const isAnyStreaming = useAppStore(
+  (s) => s.streamingStatus.claude || s.streamingStatus.chatgpt || s.streamingStatus.gemini,
+)
+```
+
+**Testing**: Reset `streamingStatus` in `beforeEach`:
+```ts
+useAppStore.setState({
+  activeConversationId: null,
+  sidebarOpen: false,
+  streamingStatus: { claude: false, chatgpt: false, gemini: false },
+})
+```
+
+**Why**: Zustand selectors are safe to read during render and minimize re-renders via equality checks.
+
+---
+
+## Anti-pattern: Reading Imperative Refs During Render
+
+**Don't do this**:
+```tsx
+// In a parent component's render body
+const isLoading = claudeRef.current?.isLoading // React 19 ESLint error
+```
+
+**Why it fails**: React 19's `react-hooks/refs` rule prohibits reading `ref.current` during render because refs are not tracked by React's reactivity system. The value may be stale or cause inconsistent renders.
+
+**Do this instead**: Sync derived state to a Zustand store via `useEffect` in the child, and read it from the store in the parent/sibling (see "Streaming Status via Zustand Store" pattern above).

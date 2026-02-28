@@ -113,7 +113,7 @@
       font-size: 0.875em;
       padding: 0.125em 0.25em;
       border-radius: 0.25em;
-      background-color: oklch(0.269 0 0);
+      background-color: var(--secondary);
     }
 
     & pre {
@@ -122,7 +122,7 @@
       padding: 0.75em 1em;
       border-radius: 0.375em;
       overflow-x: auto;
-      background-color: oklch(0.145 0 0);
+      background-color: var(--background);
     }
     & pre code {
       padding: 0;
@@ -130,15 +130,15 @@
     }
 
     & blockquote {
-      border-left: 3px solid oklch(0.439 0 0);
+      border-left: 3px solid var(--ring);
       padding-left: 0.75em;
       margin-top: 0.5em;
       margin-bottom: 0.5em;
-      color: oklch(0.708 0 0);
+      color: var(--muted-foreground);
     }
 
     & a {
-      color: oklch(0.488 0.243 264.376);
+      color: var(--chart-1);
       text-decoration: underline;
     }
 
@@ -151,17 +151,17 @@
     & th,
     & td {
       padding: 0.375em 0.75em;
-      border: 1px solid oklch(0.269 0 0);
+      border: 1px solid var(--border);
       text-align: left;
     }
     & th {
       font-weight: 600;
-      background-color: oklch(0.205 0 0);
+      background-color: var(--card);
     }
 
     & hr {
       border: none;
-      border-top: 1px solid oklch(0.269 0 0);
+      border-top: 1px solid var(--border);
       margin: 1em 0;
     }
 

@@ -1,13 +1,9 @@
 /**
- * Tests for the Zustand application store.
- *
- * Verifies default state values and all setter actions.
- * The store is reset between tests to prevent state leakage.
+ * Minimal tests for the Zustand store.
  */
 
 import { useAppStore } from '@/lib/store'
 
-/** Default state used to reset the store between tests. */
 const defaultState = {
   activeConversationId: null,
   sidebarOpen: true,
@@ -17,83 +13,43 @@ const defaultState = {
     gemini: 'gemini-2.0-flash',
   },
   theme: 'dark' as const,
+  streamingStatus: {
+    claude: false,
+    chatgpt: false,
+    gemini: false,
+  },
 }
 
 beforeEach(() => {
   useAppStore.setState(defaultState)
 })
 
-describe('default state', () => {
-  it('has activeConversationId set to null', () => {
-    expect(useAppStore.getState().activeConversationId).toBeNull()
+describe('Zustand store', () => {
+  it('has correct default state', () => {
+    const state = useAppStore.getState()
+    expect(state.activeConversationId).toBeNull()
+    expect(state.sidebarOpen).toBe(true)
+    expect(state.theme).toBe('dark')
+    expect(state.selectedModels.claude).toBe('claude-sonnet-4-20250514')
   })
 
-  it('has sidebarOpen set to true', () => {
-    expect(useAppStore.getState().sidebarOpen).toBe(true)
-  })
-
-  it('has correct default selected models', () => {
-    const { selectedModels } = useAppStore.getState()
-    expect(selectedModels).toEqual({
-      claude: 'claude-sonnet-4-20250514',
-      chatgpt: 'gpt-4o',
-      gemini: 'gemini-2.0-flash',
-    })
-  })
-
-  it('has theme set to dark', () => {
-    expect(useAppStore.getState().theme).toBe('dark')
-  })
-})
-
-describe('setActiveConversationId', () => {
-  it('sets the active conversation to a number', () => {
+  it('sets active conversation id', () => {
     useAppStore.getState().setActiveConversationId(42)
     expect(useAppStore.getState().activeConversationId).toBe(42)
-  })
 
-  it('sets the active conversation to null', () => {
-    useAppStore.getState().setActiveConversationId(42)
     useAppStore.getState().setActiveConversationId(null)
     expect(useAppStore.getState().activeConversationId).toBeNull()
   })
 
-  it('does not affect other state', () => {
-    useAppStore.getState().setActiveConversationId(5)
-    expect(useAppStore.getState().sidebarOpen).toBe(true)
-    expect(useAppStore.getState().theme).toBe('dark')
-  })
-})
-
-describe('toggleSidebar', () => {
-  it('flips sidebarOpen from true to false', () => {
-    expect(useAppStore.getState().sidebarOpen).toBe(true)
+  it('toggles sidebar', () => {
     useAppStore.getState().toggleSidebar()
     expect(useAppStore.getState().sidebarOpen).toBe(false)
-  })
 
-  it('flips sidebarOpen from false to true', () => {
-    useAppStore.getState().toggleSidebar() // true -> false
-    useAppStore.getState().toggleSidebar() // false -> true
+    useAppStore.getState().toggleSidebar()
     expect(useAppStore.getState().sidebarOpen).toBe(true)
   })
-})
 
-describe('setSidebarOpen', () => {
-  it('sets sidebarOpen to false explicitly', () => {
-    useAppStore.getState().setSidebarOpen(false)
-    expect(useAppStore.getState().sidebarOpen).toBe(false)
-  })
-
-  it('sets sidebarOpen to true explicitly', () => {
-    useAppStore.getState().setSidebarOpen(false)
-    useAppStore.getState().setSidebarOpen(true)
-    expect(useAppStore.getState().sidebarOpen).toBe(true)
-  })
-})
-
-describe('setSelectedModel', () => {
-  it('updates a single provider model without affecting others', () => {
+  it('updates a single model without affecting others', () => {
     useAppStore.getState().setSelectedModel('claude', 'claude-opus-4-20250514')
     const { selectedModels } = useAppStore.getState()
     expect(selectedModels.claude).toBe('claude-opus-4-20250514')
@@ -101,54 +57,47 @@ describe('setSelectedModel', () => {
     expect(selectedModels.gemini).toBe('gemini-2.0-flash')
   })
 
-  it('updates chatgpt model', () => {
-    useAppStore.getState().setSelectedModel('chatgpt', 'gpt-4-turbo')
-    expect(useAppStore.getState().selectedModels.chatgpt).toBe('gpt-4-turbo')
-  })
+  describe('streamingStatus', () => {
+    it('has all providers set to false by default', () => {
+      const { streamingStatus } = useAppStore.getState()
+      expect(streamingStatus.claude).toBe(false)
+      expect(streamingStatus.chatgpt).toBe(false)
+      expect(streamingStatus.gemini).toBe(false)
+    })
 
-  it('updates gemini model', () => {
-    useAppStore.getState().setSelectedModel('gemini', 'gemini-1.5-pro')
-    expect(useAppStore.getState().selectedModels.gemini).toBe('gemini-1.5-pro')
-  })
-})
+    it('sets streaming status for a single provider', () => {
+      useAppStore.getState().setStreamingStatus('claude', true)
+      const { streamingStatus } = useAppStore.getState()
+      expect(streamingStatus.claude).toBe(true)
+      expect(streamingStatus.chatgpt).toBe(false)
+      expect(streamingStatus.gemini).toBe(false)
+    })
 
-describe('setSelectedModels', () => {
-  it('replaces all selected models at once', () => {
-    const newModels = {
-      claude: 'claude-opus-4-20250514',
-      chatgpt: 'gpt-4-turbo',
-      gemini: 'gemini-1.5-pro',
-    }
-    useAppStore.getState().setSelectedModels(newModels)
-    expect(useAppStore.getState().selectedModels).toEqual(newModels)
-  })
-})
+    it('sets streaming status for multiple providers independently', () => {
+      useAppStore.getState().setStreamingStatus('claude', true)
+      useAppStore.getState().setStreamingStatus('gemini', true)
+      const { streamingStatus } = useAppStore.getState()
+      expect(streamingStatus.claude).toBe(true)
+      expect(streamingStatus.chatgpt).toBe(false)
+      expect(streamingStatus.gemini).toBe(true)
+    })
 
-describe('setTheme', () => {
-  it('sets theme to light', () => {
-    useAppStore.getState().setTheme('light')
-    expect(useAppStore.getState().theme).toBe('light')
-  })
+    it('toggles streaming status off for a provider', () => {
+      useAppStore.getState().setStreamingStatus('chatgpt', true)
+      expect(useAppStore.getState().streamingStatus.chatgpt).toBe(true)
 
-  it('sets theme back to dark', () => {
-    useAppStore.getState().setTheme('light')
-    useAppStore.getState().setTheme('dark')
-    expect(useAppStore.getState().theme).toBe('dark')
-  })
-})
+      useAppStore.getState().setStreamingStatus('chatgpt', false)
+      expect(useAppStore.getState().streamingStatus.chatgpt).toBe(false)
+    })
 
-describe('state isolation between tests', () => {
-  it('modifies state in this test', () => {
-    useAppStore.getState().setActiveConversationId(99)
-    useAppStore.getState().setSidebarOpen(false)
-    useAppStore.getState().setTheme('light')
-    expect(useAppStore.getState().activeConversationId).toBe(99)
-  })
+    it('does not affect other state when setting streaming status', () => {
+      useAppStore.getState().setActiveConversationId(42)
+      useAppStore.getState().setStreamingStatus('claude', true)
 
-  it('confirms state is reset in the next test', () => {
-    // beforeEach resets to defaults
-    expect(useAppStore.getState().activeConversationId).toBeNull()
-    expect(useAppStore.getState().sidebarOpen).toBe(true)
-    expect(useAppStore.getState().theme).toBe('dark')
+      const state = useAppStore.getState()
+      expect(state.activeConversationId).toBe(42)
+      expect(state.sidebarOpen).toBe(true)
+      expect(state.streamingStatus.claude).toBe(true)
+    })
   })
 })

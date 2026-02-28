@@ -13,11 +13,10 @@ import { memo, useEffect, useImperativeHandle, useRef } from 'react'
 import type { ForwardedRef } from 'react'
 import { forwardRef } from 'react'
 import { AlertCircleIcon, LoaderIcon, RefreshCwIcon } from 'lucide-react'
-import type { UIMessage } from 'ai'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { MessageBubble } from '@/components/MessageBubble'
-import { useProviderChat } from '@/hooks/useProviderChat'
+import { useProviderChat, getMessageText } from '@/hooks/useProviderChat'
 import type { Provider } from '@/lib/db/types'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/lib/store'
@@ -39,27 +38,13 @@ const PROVIDER_COLORS: Record<Provider, string> = {
   gemini: 'bg-chart-3',
 }
 
-/**
- * Extract the text content from a UIMessage's parts array.
- */
-function getMessageText(message: UIMessage): string {
-  if (!message.parts) return ''
-  return message.parts
-    .filter(
-      (part): part is { type: 'text'; text: string } => part.type === 'text',
-    )
-    .map((part) => part.text)
-    .join('')
-}
-
 export const ModelColumn = memo(
   forwardRef(function ModelColumn(
     { provider, label }: ModelColumnProps,
     ref: ForwardedRef<ModelColumnHandle>,
   ) {
     const activeConversationId = useAppStore((s) => s.activeConversationId)
-    const selectedModels = useAppStore((s) => s.selectedModels)
-    const model = selectedModels[provider]
+    const model = useAppStore((s) => s.selectedModels[provider])
 
     const { messages, status, error, send, stop, clearError, isLoading } =
       useProviderChat({

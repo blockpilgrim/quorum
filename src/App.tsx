@@ -53,9 +53,11 @@ function App() {
         })
         setActiveConversationId(conversationId)
 
-        // Allow the state update and useProviderChat seeding to settle.
-        // The seeding effect in useProviderChat runs on conversationId change,
-        // so we need a brief delay for the hook to pick up the new ID.
+        // Allow the state update and useProviderChat seeding effect to settle.
+        // The seeding effect runs on conversationId change; without this delay,
+        // send() fires before the hook sees the new ID. This is a known
+        // timing-based workaround — Phase 6+ may replace it with a ref-based
+        // queue or callback pattern if it proves flaky on slower devices.
         await new Promise((resolve) => setTimeout(resolve, 50))
       } else {
         // Update the conversation's updatedAt timestamp

@@ -61,7 +61,7 @@ Client-orchestrated: SPA reads latest responses from each model, constructs mess
 
 13 sequential phases defined in `docs/IMPLEMENTATION-PLAN.md`. Key dependency: Phases 2-3 (data layer, app shell) and Phase 4 (proxy) can run in parallel. Phases 7-9 parallelize after Phase 6.
 
-**Current status:** Phase 4 complete. API proxy (Cloudflare Pages Function at `POST /api/chat`) implemented and tested. Streams AI responses from Claude, ChatGPT, and Gemini with CORS support, request validation, and structured error handling. App shell (Phase 3) provides layout, data layer (Phase 2) provides persistence.
+**Current status:** Phase 5 complete. Streaming chat with Claude working end-to-end. `useProviderChat` hook wraps AI SDK's `useChat` with Dexie persistence sync and Zustand streaming status. `MessageBubble` renders markdown via `react-markdown`. `ModelColumn` exposes `send()` via `forwardRef`/`useImperativeHandle`. `App.tsx` auto-creates conversations on first message and dispatches to columns via imperative refs. All three columns render but only Claude sends (ChatGPT/Gemini wiring deferred to Phase 6).
 
 ## Workflow: /implement Skill
 

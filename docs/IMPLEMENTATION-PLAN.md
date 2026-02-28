@@ -127,7 +127,7 @@ Each phase produces a working, testable increment. Phases are sequential — lat
 
 ---
 
-- [ ] ## Phase 5: Streaming Chat — Single Provider
+- [x] ## Phase 5: Streaming Chat — Single Provider
 
 **Goal**: User can type a message and see a streaming response from one provider (start with Claude). Messages persist across reloads.
 
@@ -167,16 +167,13 @@ Each phase produces a working, testable increment. Phases are sequential — lat
 
 **Goal**: A single user message fans out to all three providers concurrently. Each column streams independently.
 
-1. **Add `useChat` instances for ChatGPT and Gemini columns**
-   - Same pattern as Claude, different provider/model config
-   - Each instance maintains its own message history
+1. **Wire send to ChatGPT and Gemini columns**
+   - All three `ModelColumn` instances with `useProviderChat` already render from Phase 5
+   - Uncomment ChatGPT/Gemini `send()` calls in `App.tsx` `handleSend`
+   - Each column's `useProviderChat` writes its own user message to Dexie per provider
 
-2. **Wire the shared input bar to all three instances**
-   - On send: call `append()` on all three `useChat` instances concurrently
-   - Write the user message to Dexie once (shared), then fan out to each provider thread
-
-3. **Implement stream isolation**
-   - Wrap each column in `React.memo`
+2. **Verify stream isolation**
+   - `React.memo` already wraps `ModelColumn` from Phase 5
    - Verify that tokens arriving for one provider don't re-render other columns
    - Profile with React DevTools if needed
 

@@ -39,7 +39,7 @@ Significant decisions made during implementation. Referenced by CLAUDE.md's Comp
 
 **Decision:** Use `toUIMessageStreamResponse()` which outputs the UI message stream protocol compatible with AI SDK v6's `useChat` hook.
 
-**Consequence:** The client can use `useChat({ streamProtocol: 'ui-message' })` (the default in v6) without custom parsing. Token usage metadata is included in the stream. Mid-stream errors are surfaced via the `onError` callback.
+**Consequence:** The client uses `DefaultChatTransport` from the `ai` package with `prepareSendMessagesRequest` for request customization, paired with `useChat({ transport })`. This is the default transport in AI SDK v6 and parses the UI message stream format natively. Token usage metadata is included in the stream. Mid-stream errors are surfaced via the `onError` callback.
 
 ---
 
