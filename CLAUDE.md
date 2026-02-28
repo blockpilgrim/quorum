@@ -85,6 +85,28 @@ A pre-commit hook enforces all /implement phases completed before session exit (
 
 ## Custom Instructions
 
+### Think Before Coding
+- State assumptions explicitly. If uncertain, ask.
+- If multiple valid approaches exist, present them with tradeoffs — don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted.
+- If something is unclear, stop. Name what's confusing. Ask.
+
+### Goal-Driven Execution
+Transform tasks into verifiable goals before implementing:
+- "Add validation" → "Write tests for invalid inputs, then make them pass"
+- "Fix the bug" → "Write a test that reproduces it, then make it pass"
+
+For multi-step tasks, state a brief plan:
+```
+1. [Step] → verify: [check]
+2. [Step] → verify: [check]
+```
+
+### Surgical Changes
+When editing existing code:
+- Remove imports/variables/functions that YOUR changes made unused
+- Don't remove pre-existing dead code unless asked (mention it instead)
+
 ### Session Startup Protocol
 At the beginning of each session:
 1. Read `docs/PRODUCT.md` to understand what we're building

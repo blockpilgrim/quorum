@@ -53,7 +53,9 @@ Fix any **Critical** documentation discrepancies yourself. Commit the changes.
    - Update docs/DECISIONS.md if significant architectural decisions were made
    - Commit any convention updates
 
-2. Provide a **final summary** covering:
+2. **Update progress** in `docs/IMPLEMENTATION-PLAN.md` — mark the completed phase as done (`- [x]`)
+
+3. Provide a **final summary** covering:
    - What was built
    - Test coverage
    - Review findings and how they were resolved
