@@ -12,7 +12,7 @@
 
 ### Frontend: Vite + React + TypeScript
 
-**Decision**: Vite 6 with React 19 and TypeScript. Not Next.js, not SvelteKit.
+**Decision**: Vite 7 with React 19 and TypeScript. Not Next.js, not SvelteKit.
 
 **Rationale**: This is a client-side SPA. There is no SEO requirement, no server-side rendering, no static site generation. Next.js's strengths (App Router, Server Components, ISR) are entirely wasted here — you'd be fighting its opinionated full-stack architecture to build something it wasn't designed for. Vite is purpose-built for SPAs: sub-2-second cold starts, millisecond HMR, and a minimal output bundle with zero unnecessary framework overhead.
 

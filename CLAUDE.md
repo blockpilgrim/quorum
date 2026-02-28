@@ -8,7 +8,7 @@ Cortex is a unified tri-model AI workspace — a client-side SPA that sends user
 
 ## Tech Stack
 
-- **Frontend:** Vite 6 + React 19 + TypeScript
+- **Frontend:** Vite 7 + React 19 + TypeScript
 - **Styling:** Tailwind CSS v4 + shadcn/ui + shadcn-chat
 - **AI Streaming:** Vercel AI SDK (`ai`, `@ai-sdk/react`) with provider adapters (`@ai-sdk/anthropic`, `@ai-sdk/openai`, `@ai-sdk/google`)
 - **Persistence:** Dexie.js v4 (IndexedDB) — conversations, messages, API keys stored locally
@@ -18,13 +18,15 @@ Cortex is a unified tri-model AI workspace — a client-side SPA that sends user
 
 ## Common Commands
 
-Commands will be available once Phase 1 scaffolding is complete:
-
 ```bash
 npm run dev          # Start Vite dev server
-npm run build        # Production build (output: dist/)
-npm run test         # Run Vitest
+npm run build        # TypeScript check + production build (output: dist/)
+npm run test         # Run Vitest (unit/component/integration)
+npm run test:watch   # Vitest in watch mode
+npm run test:e2e     # Run Playwright E2E tests
 npm run lint         # ESLint
+npm run format       # Prettier auto-format
+npm run format:check # Prettier check (CI-friendly)
 ```
 
 Cloudflare proxy local dev: `wrangler pages dev`
@@ -59,7 +61,7 @@ Client-orchestrated: SPA reads latest responses from each model, constructs mess
 
 13 sequential phases defined in `docs/IMPLEMENTATION-PLAN.md`. Key dependency: Phases 2-3 (data layer, app shell) and Phase 4 (proxy) can run in parallel. Phases 7-9 parallelize after Phase 6.
 
-**Current status:** Phase 1 not yet started. No source code exists yet.
+**Current status:** Phase 1 complete. Scaffold, tooling, and dev environment configured.
 
 ## Workflow: /implement Skill
 
