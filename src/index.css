@@ -56,6 +56,121 @@
   }
 }
 
+/* Minimal prose styling for markdown-rendered assistant messages.
+   Replaces @tailwindcss/typography which is not yet Tailwind v4 compatible. */
+@layer components {
+  .markdown-prose {
+    line-height: 1.625;
+    color: inherit;
+
+    & p {
+      margin-top: 0.5em;
+      margin-bottom: 0.5em;
+    }
+    & p:first-child {
+      margin-top: 0;
+    }
+    & p:last-child {
+      margin-bottom: 0;
+    }
+
+    & h1,
+    & h2,
+    & h3,
+    & h4 {
+      font-weight: 600;
+      margin-top: 1em;
+      margin-bottom: 0.5em;
+    }
+    & h1 {
+      font-size: 1.25em;
+    }
+    & h2 {
+      font-size: 1.125em;
+    }
+    & h3 {
+      font-size: 1em;
+    }
+
+    & ul,
+    & ol {
+      padding-left: 1.5em;
+      margin-top: 0.5em;
+      margin-bottom: 0.5em;
+    }
+    & ul {
+      list-style-type: disc;
+    }
+    & ol {
+      list-style-type: decimal;
+    }
+    & li {
+      margin-top: 0.25em;
+      margin-bottom: 0.25em;
+    }
+
+    & code {
+      font-size: 0.875em;
+      padding: 0.125em 0.25em;
+      border-radius: 0.25em;
+      background-color: oklch(0.269 0 0);
+    }
+
+    & pre {
+      margin-top: 0.75em;
+      margin-bottom: 0.75em;
+      padding: 0.75em 1em;
+      border-radius: 0.375em;
+      overflow-x: auto;
+      background-color: oklch(0.145 0 0);
+    }
+    & pre code {
+      padding: 0;
+      background-color: transparent;
+    }
+
+    & blockquote {
+      border-left: 3px solid oklch(0.439 0 0);
+      padding-left: 0.75em;
+      margin-top: 0.5em;
+      margin-bottom: 0.5em;
+      color: oklch(0.708 0 0);
+    }
+
+    & a {
+      color: oklch(0.488 0.243 264.376);
+      text-decoration: underline;
+    }
+
+    & table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 0.5em;
+      margin-bottom: 0.5em;
+    }
+    & th,
+    & td {
+      padding: 0.375em 0.75em;
+      border: 1px solid oklch(0.269 0 0);
+      text-align: left;
+    }
+    & th {
+      font-weight: 600;
+      background-color: oklch(0.205 0 0);
+    }
+
+    & hr {
+      border: none;
+      border-top: 1px solid oklch(0.269 0 0);
+      margin: 1em 0;
+    }
+
+    & strong {
+      font-weight: 600;
+    }
+  }
+}
+
 :root {
   --radius: 0.625rem;
   --background: oklch(1 0 0);

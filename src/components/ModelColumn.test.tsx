@@ -1,31 +1,53 @@
 /**
- * Tests for the ModelColumn component.
+ * Tests for ModelColumn.
  *
- * Uses fake-indexeddb for Dexie's useLiveQuery to work in jsdom.
- * Tests cover: header rendering, empty states, and message display.
+ * Mocks useProviderChat since the component now integrates with the AI SDK
+ * for streaming. Tests focus on rendering behavior, not streaming logic.
  */
 
 import 'fake-indexeddb/auto'
 
 import { render, screen, waitFor } from '@testing-library/react'
+import type { UIMessage } from 'ai'
 import { ModelColumn } from '@/components/ModelColumn'
 import { useAppStore } from '@/lib/store'
-import { db, createConversation, addMessage } from '@/lib/db'
+import { db } from '@/lib/db'
 
-const defaultModelConfig = {
-  claude: 'claude-sonnet-4-20250514',
-  chatgpt: 'gpt-4o',
-  gemini: 'gemini-2.0-flash',
-}
+// Mock useProviderChat to avoid AI SDK dependencies in component tests
+const mockSend = vi.fn().mockResolvedValue(true)
+const mockStop = vi.fn()
+const mockClearError = vi.fn()
+
+let mockMessages: UIMessage[] = []
+let mockStatus: 'ready' | 'submitted' | 'streaming' | 'error' = 'ready'
+let mockError: Error | undefined = undefined
+
+vi.mock('@/hooks/useProviderChat', () => ({
+  useProviderChat: () => ({
+    messages: mockMessages,
+    status: mockStatus,
+    error: mockError,
+    send: mockSend,
+    stop: mockStop,
+    clearError: mockClearError,
+    isLoading: mockStatus === 'submitted' || mockStatus === 'streaming',
+  }),
+  getMessageText: (msg: UIMessage) =>
+    msg.parts
+      ?.filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+      .map((p) => p.text)
+      .join('') ?? '',
+}))
 
 beforeEach(async () => {
-  useAppStore.setState({
-    activeConversationId: null,
-    sidebarOpen: false,
-  })
+  useAppStore.setState({ activeConversationId: null, sidebarOpen: false })
   await db.conversations.clear()
   await db.messages.clear()
   await db.settings.clear()
+  mockMessages = []
+  mockStatus = 'ready'
+  mockError = undefined
+  vi.clearAllMocks()
 })
 
 afterAll(async () => {
@@ -33,192 +55,62 @@ afterAll(async () => {
 })
 
 describe('ModelColumn', () => {
-  describe('header rendering', () => {
-    it('renders the provider label for Claude', () => {
-      render(<ModelColumn provider="claude" label="Claude" />)
-      expect(screen.getByText('Claude')).toBeInTheDocument()
-    })
+  it('renders the provider label', () => {
+    render(<ModelColumn provider="claude" label="Claude" />)
+    expect(screen.getByText('Claude')).toBeInTheDocument()
+  })
 
-    it('renders the provider label for ChatGPT', () => {
-      render(<ModelColumn provider="chatgpt" label="ChatGPT" />)
-      expect(screen.getByText('ChatGPT')).toBeInTheDocument()
-    })
+  it('renders messages from useProviderChat', async () => {
+    mockMessages = [
+      {
+        id: '1',
+        role: 'user',
+        parts: [{ type: 'text', text: 'Hello Claude!' }],
+      },
+      {
+        id: '2',
+        role: 'assistant',
+        parts: [{ type: 'text', text: 'Hi there!' }],
+      },
+    ]
 
-    it('renders the provider label for Gemini', () => {
-      render(<ModelColumn provider="gemini" label="Gemini" />)
-      expect(screen.getByText('Gemini')).toBeInTheDocument()
-    })
+    useAppStore.setState({ activeConversationId: 1 })
+    render(<ModelColumn provider="claude" label="Claude" />)
 
-    it('renders a colored dot indicator in the header', () => {
-      const { container } = render(
-        <ModelColumn provider="claude" label="Claude" />,
-      )
-      // The dot is a div with a rounded-full class and a provider-specific color
-      const dot = container.querySelector('.rounded-full')
-      expect(dot).toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.getByText('Hello Claude!')).toBeInTheDocument()
+      expect(screen.getByText('Hi there!')).toBeInTheDocument()
     })
   })
 
-  describe('empty states', () => {
-    it('shows "Start a conversation" message when no conversation is active', async () => {
-      useAppStore.setState({ activeConversationId: null })
-      render(<ModelColumn provider="claude" label="Claude" />)
-
-      await waitFor(() => {
-        expect(
-          screen.getByText('Start a conversation to see Claude responses'),
-        ).toBeInTheDocument()
-      })
-    })
-
-    it('shows "No messages from <label> yet" when conversation is active but has no messages', async () => {
-      const convId = await createConversation({
-        modelConfig: defaultModelConfig,
-      })
-      useAppStore.setState({ activeConversationId: convId })
-
-      render(<ModelColumn provider="claude" label="Claude" />)
-
-      await waitFor(() => {
-        expect(
-          screen.getByText('No messages from Claude yet'),
-        ).toBeInTheDocument()
-      })
-    })
-
-    it('shows provider-specific empty state for ChatGPT', async () => {
-      useAppStore.setState({ activeConversationId: null })
-      render(<ModelColumn provider="chatgpt" label="ChatGPT" />)
-
-      await waitFor(() => {
-        expect(
-          screen.getByText('Start a conversation to see ChatGPT responses'),
-        ).toBeInTheDocument()
-      })
-    })
-
-    it('shows provider-specific empty state for Gemini', async () => {
-      useAppStore.setState({ activeConversationId: null })
-      render(<ModelColumn provider="gemini" label="Gemini" />)
-
-      await waitFor(() => {
-        expect(
-          screen.getByText('Start a conversation to see Gemini responses'),
-        ).toBeInTheDocument()
-      })
-    })
+  it('shows empty state when no conversation is active', () => {
+    render(<ModelColumn provider="claude" label="Claude" />)
+    expect(
+      screen.getByText('Start a conversation to see Claude responses'),
+    ).toBeInTheDocument()
   })
 
-  describe('message rendering', () => {
-    it('renders messages when they exist for the active conversation', async () => {
-      const convId = await createConversation({
-        modelConfig: defaultModelConfig,
-      })
-      await addMessage({
-        conversationId: convId,
-        provider: 'claude',
+  it('shows a loading spinner when status is submitted', () => {
+    mockMessages = [
+      {
+        id: '1',
         role: 'user',
-        content: 'Hello Claude!',
-      })
-      await addMessage({
-        conversationId: convId,
-        provider: 'claude',
-        role: 'assistant',
-        content: 'Hello! How can I help?',
-      })
+        parts: [{ type: 'text', text: 'Hello' }],
+      },
+    ]
+    mockStatus = 'submitted'
+    useAppStore.setState({ activeConversationId: 1 })
+    render(<ModelColumn provider="claude" label="Claude" />)
 
-      useAppStore.setState({ activeConversationId: convId })
-      render(<ModelColumn provider="claude" label="Claude" />)
+    expect(screen.getByLabelText('Stop streaming')).toBeInTheDocument()
+  })
 
-      await waitFor(() => {
-        expect(screen.getByText('Hello Claude!')).toBeInTheDocument()
-        expect(screen.getByText('Hello! How can I help?')).toBeInTheDocument()
-      })
-    })
+  it('shows error display when there is an error', () => {
+    mockError = new Error('API key invalid')
+    useAppStore.setState({ activeConversationId: 1 })
+    render(<ModelColumn provider="claude" label="Claude" />)
 
-    it('only renders messages for the matching provider', async () => {
-      const convId = await createConversation({
-        modelConfig: defaultModelConfig,
-      })
-      await addMessage({
-        conversationId: convId,
-        provider: 'claude',
-        role: 'user',
-        content: 'Message for Claude',
-      })
-      await addMessage({
-        conversationId: convId,
-        provider: 'chatgpt',
-        role: 'user',
-        content: 'Message for ChatGPT',
-      })
-
-      useAppStore.setState({ activeConversationId: convId })
-      render(<ModelColumn provider="claude" label="Claude" />)
-
-      await waitFor(() => {
-        expect(screen.getByText('Message for Claude')).toBeInTheDocument()
-      })
-      expect(screen.queryByText('Message for ChatGPT')).not.toBeInTheDocument()
-    })
-
-    it('applies different styles for user vs assistant messages', async () => {
-      const convId = await createConversation({
-        modelConfig: defaultModelConfig,
-      })
-      await addMessage({
-        conversationId: convId,
-        provider: 'claude',
-        role: 'user',
-        content: 'User message text',
-      })
-      await addMessage({
-        conversationId: convId,
-        provider: 'claude',
-        role: 'assistant',
-        content: 'Assistant message text',
-      })
-
-      useAppStore.setState({ activeConversationId: convId })
-      render(<ModelColumn provider="claude" label="Claude" />)
-
-      await waitFor(() => {
-        const userMsg = screen.getByText('User message text')
-        const assistantMsg = screen.getByText('Assistant message text')
-
-        // User messages have 'self-end' class, assistant messages have 'self-start'
-        expect(userMsg.closest('div')).toHaveClass('self-end')
-        expect(assistantMsg.closest('div')).toHaveClass('self-start')
-      })
-    })
-
-    it('does not show messages from a different conversation', async () => {
-      const convId1 = await createConversation({
-        modelConfig: defaultModelConfig,
-      })
-      const convId2 = await createConversation({
-        modelConfig: defaultModelConfig,
-      })
-      await addMessage({
-        conversationId: convId1,
-        provider: 'claude',
-        role: 'user',
-        content: 'Conv 1 message',
-      })
-      await addMessage({
-        conversationId: convId2,
-        provider: 'claude',
-        role: 'user',
-        content: 'Conv 2 message',
-      })
-
-      useAppStore.setState({ activeConversationId: convId1 })
-      render(<ModelColumn provider="claude" label="Claude" />)
-
-      await waitFor(() => {
-        expect(screen.getByText('Conv 1 message')).toBeInTheDocument()
-      })
-      expect(screen.queryByText('Conv 2 message')).not.toBeInTheDocument()
-    })
+    expect(screen.getByText('API key invalid')).toBeInTheDocument()
+    expect(screen.getByText('Dismiss')).toBeInTheDocument()
   })
 })

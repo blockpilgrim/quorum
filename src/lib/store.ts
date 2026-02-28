@@ -11,6 +11,9 @@
 import { create } from 'zustand'
 import type { Provider, SelectedModels, Theme } from '@/lib/db/types'
 
+/** Per-provider streaming status. */
+export type StreamingStatus = Record<Provider, boolean>
+
 interface AppState {
   /** Currently active conversation ID, or null if no conversation is selected. */
   activeConversationId: number | null
@@ -20,6 +23,8 @@ interface AppState {
   selectedModels: SelectedModels
   /** Current color theme. */
   theme: Theme
+  /** Per-provider streaming state (true = currently streaming or submitted). */
+  streamingStatus: StreamingStatus
 }
 
 interface AppActions {
@@ -35,6 +40,8 @@ interface AppActions {
   setSelectedModels: (models: SelectedModels) => void
   /** Set the color theme. */
   setTheme: (theme: Theme) => void
+  /** Update streaming status for a specific provider. */
+  setStreamingStatus: (provider: Provider, isStreaming: boolean) => void
 }
 
 export type AppStore = AppState & AppActions
@@ -49,6 +56,11 @@ export const useAppStore = create<AppStore>()((set) => ({
     gemini: 'gemini-2.0-flash',
   },
   theme: 'dark',
+  streamingStatus: {
+    claude: false,
+    chatgpt: false,
+    gemini: false,
+  },
 
   // Actions
   setActiveConversationId: (id) => set({ activeConversationId: id }),
@@ -60,4 +72,8 @@ export const useAppStore = create<AppStore>()((set) => ({
     })),
   setSelectedModels: (models) => set({ selectedModels: models }),
   setTheme: (theme) => set({ theme }),
+  setStreamingStatus: (provider, isStreaming) =>
+    set((state) => ({
+      streamingStatus: { ...state.streamingStatus, [provider]: isStreaming },
+    })),
 }))

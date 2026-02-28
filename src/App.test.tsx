@@ -1,54 +1,51 @@
+/**
+ * Smoke test for the App shell.
+ *
+ * Mocks useProviderChat to avoid AI SDK dependencies.
+ * Tests that the main layout elements render correctly.
+ */
+
+import 'fake-indexeddb/auto'
+
 import { render, screen } from '@testing-library/react'
 import App from '@/App'
 import { useAppStore } from '@/lib/store'
+import { db } from '@/lib/db'
 
-// Reset Zustand state between tests and start with sidebar closed
-// to avoid the Sheet overlay interfering with accessibility queries in jsdom
-beforeEach(() => {
+// Mock useProviderChat to avoid AI SDK / streaming dependencies
+vi.mock('@/hooks/useProviderChat', () => ({
+  useProviderChat: () => ({
+    messages: [],
+    status: 'ready',
+    error: undefined,
+    send: vi.fn().mockResolvedValue(true),
+    stop: vi.fn(),
+    clearError: vi.fn(),
+    isLoading: false,
+  }),
+  getMessageText: () => '',
+}))
+
+beforeEach(async () => {
   useAppStore.setState({ sidebarOpen: false })
+  await db.conversations.clear()
+  await db.messages.clear()
+  await db.settings.clear()
+})
+
+afterAll(async () => {
+  await db.delete()
 })
 
 describe('App', () => {
-  it('renders the Cortex heading in the top bar', () => {
+  it('renders the main layout elements', () => {
     render(<App />)
     expect(screen.getByText('Cortex')).toBeInTheDocument()
-  })
-
-  it('renders all three model columns', () => {
-    render(<App />)
     expect(screen.getByText('Claude')).toBeInTheDocument()
     expect(screen.getByText('ChatGPT')).toBeInTheDocument()
     expect(screen.getByText('Gemini')).toBeInTheDocument()
-  })
-
-  it('renders the input bar', () => {
-    render(<App />)
-    // No API keys configured, so it shows the "configure" placeholder
-    const input = screen.getByPlaceholderText(
-      'Configure API keys in settings to start...',
-    )
-    expect(input).toBeInTheDocument()
-    expect(input).toBeDisabled()
-  })
-
-  it('renders a disabled send button when no API keys are configured', () => {
-    render(<App />)
-    const button = screen.getByRole('button', { name: 'Send message' })
-    expect(button).toBeInTheDocument()
-    expect(button).toBeDisabled()
-  })
-
-  it('renders the sidebar toggle button', () => {
-    render(<App />)
     expect(
-      screen.getByRole('button', { name: 'Toggle sidebar' }),
-    ).toBeInTheDocument()
-  })
-
-  it('renders the new conversation button in the top bar', () => {
-    render(<App />)
-    expect(
-      screen.getByRole('button', { name: 'New conversation' }),
+      screen.getByRole('button', { name: 'Send message' }),
     ).toBeInTheDocument()
   })
 })

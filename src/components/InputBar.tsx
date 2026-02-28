@@ -1,8 +1,9 @@
 /**
  * Shared input bar pinned to the bottom of the main content area.
  *
- * Currently a placeholder — send functionality comes in Phase 5.
- * Disabled when no API keys are configured.
+ * Accepts an `onSend` callback from the parent to dispatch user messages
+ * to all provider columns. Disabled when no API keys are configured or
+ * while any provider is streaming.
  */
 
 import { SendIcon } from 'lucide-react'
@@ -12,7 +13,14 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { db } from '@/lib/db'
 
-export function InputBar() {
+interface InputBarProps {
+  /** Called when the user submits a message. */
+  onSend: (text: string) => void
+  /** Whether any provider is currently streaming (disables input). */
+  isStreaming?: boolean
+}
+
+export function InputBar({ onSend, isStreaming = false }: InputBarProps) {
   const [value, setValue] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -25,7 +33,7 @@ export function InputBar() {
       settings.apiKeys.chatgpt !== '' ||
       settings.apiKeys.gemini !== '')
 
-  const isDisabled = !hasApiKeys
+  const isDisabled = !hasApiKeys || isStreaming
 
   // Auto-focus on mount
   useEffect(() => {
@@ -36,10 +44,10 @@ export function InputBar() {
     const trimmed = value.trim()
     if (!trimmed || isDisabled) return
 
-    // Placeholder — actual send logic comes in Phase 5
+    onSend(trimmed)
     setValue('')
     inputRef.current?.focus()
-  }, [value, isDisabled])
+  }, [value, isDisabled, onSend])
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -60,9 +68,11 @@ export function InputBar() {
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={
-            isDisabled
+            !hasApiKeys
               ? 'Configure API keys in settings to start...'
-              : 'Ask all three models...'
+              : isStreaming
+                ? 'Waiting for response...'
+                : 'Ask all three models...'
           }
           disabled={isDisabled}
           className="flex-1"
