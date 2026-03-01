@@ -64,7 +64,7 @@ export const MessageBubble = memo(function MessageBubble({
       {/* Cross-feed indicator */}
       {isCrossFeed && (
         <div className="text-muted-foreground mb-1 flex items-center gap-1 text-[10px]">
-          <ArrowLeftRightIcon className="h-3 w-3" />
+          <ArrowLeftRightIcon className="h-3 w-3" aria-hidden="true" />
           <span>Cross-feed</span>
         </div>
       )}
@@ -115,7 +115,7 @@ export const MessageBubble = memo(function MessageBubble({
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 opacity-0 transition-opacity group-hover:opacity-100"
+            className="h-6 w-6 opacity-0 transition-opacity focus:opacity-100 group-hover:opacity-100"
             onClick={handleCopy}
             aria-label={copied ? 'Copied' : 'Copy message'}
           >

@@ -76,11 +76,15 @@ export const ModelColumn = memo(
     }, [messages.length, status])
 
     return (
-      <div className="border-border flex min-h-0 flex-1 flex-col border-b last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0">
+      <section
+        aria-label={`${label} conversation`}
+        className="border-border flex min-h-0 flex-1 flex-col border-b last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0"
+      >
         {/* Column header */}
         <div className="border-border flex items-center gap-2 border-b px-3 py-2">
           <div
             className={cn('h-2 w-2 rounded-full', PROVIDER_COLORS[provider])}
+            aria-hidden="true"
           />
           <div className="flex flex-col">
             <span className="text-foreground text-sm font-medium">{label}</span>
@@ -89,7 +93,10 @@ export const ModelColumn = memo(
             </span>
           </div>
           {isLoading && (
-            <LoaderIcon className="text-muted-foreground h-3 w-3 animate-spin" />
+            <LoaderIcon
+              className="text-muted-foreground h-3 w-3 animate-spin"
+              aria-label={`${label} is streaming`}
+            />
           )}
           {isLoading && (
             <Button
@@ -97,18 +104,21 @@ export const ModelColumn = memo(
               size="icon"
               className="ml-auto h-6 w-6"
               onClick={stop}
-              aria-label="Stop streaming"
+              aria-label={`Stop ${label} streaming`}
             >
-              <span className="bg-foreground h-2.5 w-2.5 rounded-sm" />
+              <span className="bg-foreground h-2.5 w-2.5 rounded-sm" aria-hidden="true" />
             </Button>
           )}
         </div>
 
         {/* Message area -- fade in on conversation switch */}
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1" aria-label={`${label} messages`}>
           <div
             key={activeConversationId ?? 'none'}
             className="conversation-fade-in flex flex-col gap-2 p-3"
+            role="log"
+            aria-live="polite"
+            aria-label={`${label} message history`}
           >
             {messages.length === 0 && !error ? (
               <EmptyState
@@ -140,8 +150,12 @@ export const ModelColumn = memo(
 
                 {/* Submitted state: waiting for first token */}
                 {status === 'submitted' && (
-                  <div className="bg-card text-card-foreground self-start rounded-lg px-3 py-2 text-sm">
-                    <LoaderIcon className="text-muted-foreground h-4 w-4 animate-spin" />
+                  <div
+                    className="bg-card text-card-foreground self-start rounded-lg px-3 py-2 text-sm"
+                    role="status"
+                    aria-label={`Waiting for ${label} response`}
+                  >
+                    <LoaderIcon className="text-muted-foreground h-4 w-4 animate-spin" aria-hidden="true" />
                   </div>
                 )}
               </>
@@ -149,9 +163,9 @@ export const ModelColumn = memo(
 
             {/* Error display */}
             {error && (
-              <div className="bg-destructive/10 text-destructive self-start rounded-lg px-3 py-2 text-sm">
+              <div role="alert" className="bg-destructive/10 text-destructive self-start rounded-lg px-3 py-2 text-sm">
                 <div className="flex items-center gap-2">
-                  <AlertCircleIcon className="h-4 w-4 shrink-0" />
+                  <AlertCircleIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
                   <span>{error.message}</span>
                 </div>
                 <Button
@@ -170,7 +184,7 @@ export const ModelColumn = memo(
             <div ref={scrollEndRef} />
           </div>
         </ScrollArea>
-      </div>
+      </section>
     )
   }),
 )

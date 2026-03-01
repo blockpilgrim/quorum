@@ -240,6 +240,14 @@ function App() {
 
   return (
     <div className="bg-background flex h-dvh flex-col">
+      {/* Skip-to-content link for keyboard navigation */}
+      <a
+        href="#main-content"
+        className="bg-primary text-primary-foreground fixed top-0 left-1/2 z-50 -translate-x-1/2 -translate-y-full rounded-b-md px-4 py-2 text-sm font-medium transition-transform focus:translate-y-0"
+      >
+        Skip to content
+      </a>
+
       <TopBar
         onNewConversation={handleNewConversation}
         onSearchOpen={handleSearchOpen}
@@ -249,7 +257,7 @@ function App() {
         <ConversationSidebar onNewConversation={handleNewConversation} />
 
         {/* Main content area */}
-        <main className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <main id="main-content" className="flex min-h-0 min-w-0 flex-1 flex-col">
           {/* Model columns: 3-column grid on desktop, stacked on mobile.
               animate-in with fade on conversation switch via key. */}
           <div className="flex min-h-0 flex-1 flex-col md:flex-row">

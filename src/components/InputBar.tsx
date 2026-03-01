@@ -46,10 +46,12 @@ export function InputBar({
 
   const isDisabled = !hasApiKeys || isStreaming
 
-  // Auto-focus on mount
+  // Auto-focus on mount and when streaming finishes (so user can immediately type)
   useEffect(() => {
-    textareaRef.current?.focus()
-  }, [])
+    if (!isStreaming) {
+      textareaRef.current?.focus()
+    }
+  }, [isStreaming])
 
   // Auto-resize textarea to fit content (up to max height)
   useEffect(() => {
