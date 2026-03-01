@@ -31,6 +31,13 @@ export const MODEL_OPTIONS: Record<Provider, ModelOption[]> = {
   ],
 }
 
+/** Default model ID per provider (first entry in MODEL_OPTIONS). */
+export const DEFAULT_MODELS: Record<Provider, string> = {
+  claude: MODEL_OPTIONS.claude[0].id,
+  chatgpt: MODEL_OPTIONS.chatgpt[0].id,
+  gemini: MODEL_OPTIONS.gemini[0].id,
+}
+
 /** Flat map from model ID to display name for quick lookups. */
 export const MODEL_DISPLAY_NAMES: Record<string, string> = Object.values(
   MODEL_OPTIONS,

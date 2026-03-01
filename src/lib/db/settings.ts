@@ -7,6 +7,7 @@
 
 import { db } from '@/lib/db/schema'
 import type { Settings, UpdateSettingsInput } from '@/lib/db/types'
+import { DEFAULT_MODELS } from '@/lib/models'
 
 /** Default settings used when no record exists yet. */
 const DEFAULT_SETTINGS: Settings = {
@@ -16,11 +17,7 @@ const DEFAULT_SETTINGS: Settings = {
     chatgpt: '',
     gemini: '',
   },
-  selectedModels: {
-    claude: 'claude-sonnet-4-6',
-    chatgpt: 'gpt-5.2',
-    gemini: 'gemini-3-flash-preview',
-  },
+  selectedModels: { ...DEFAULT_MODELS },
   theme: 'dark',
 }
 

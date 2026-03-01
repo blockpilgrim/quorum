@@ -47,7 +47,7 @@ export function TopBar({ onNewConversation, onSearchOpen }: TopBarProps) {
           size="icon"
           onClick={onSearchOpen}
           aria-label="Search conversations"
-          title="Search conversations (Ctrl+K)"
+          title={`Search conversations (${/(Mac|iPhone|iPad)/.test(navigator.userAgent) ? '⌘' : 'Ctrl+'}K)`}
           className="h-10 w-10 sm:h-8 sm:w-8"
         >
           <SearchIcon className="h-4 w-4" />
@@ -65,7 +65,7 @@ export function TopBar({ onNewConversation, onSearchOpen }: TopBarProps) {
         size="icon"
         onClick={onNewConversation}
         aria-label="New conversation"
-        title="New conversation (Ctrl+N)"
+        title={`New conversation (${/(Mac|iPhone|iPad)/.test(navigator.userAgent) ? '⌘' : 'Ctrl+'}N)`}
         className="h-10 w-10 sm:h-8 sm:w-8"
       >
         <PlusIcon className="h-4 w-4" />

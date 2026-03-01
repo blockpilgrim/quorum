@@ -10,6 +10,7 @@
 
 import { create } from 'zustand'
 import type { Provider, SelectedModels, Theme } from '@/lib/db/types'
+import { DEFAULT_MODELS } from '@/lib/models'
 
 /** Per-provider streaming status. */
 export type StreamingStatus = Record<Provider, boolean>
@@ -50,11 +51,7 @@ export const useAppStore = create<AppStore>()((set) => ({
   // State
   activeConversationId: null,
   sidebarOpen: true,
-  selectedModels: {
-    claude: 'claude-sonnet-4-6',
-    chatgpt: 'gpt-5.2',
-    gemini: 'gemini-3-flash-preview',
-  },
+  selectedModels: { ...DEFAULT_MODELS },
   theme: 'dark',
   streamingStatus: {
     claude: false,

@@ -92,3 +92,16 @@ Significant decisions made during implementation. Referenced by CLAUDE.md's Comp
 **Decision:** Accept this limitation for the MVP. Document it in the UI with "Costs estimated using currently selected models." The correct long-term fix is to add a `model: string` field to the `Message` schema and use it for cost lookups, but this requires a Dexie schema migration and touches many persistence paths.
 
 **Consequence:** Cost estimates may be inaccurate when users switch models within a conversation. This is a known limitation documented in the UI and in this decision log. Adding `model` to `Message` is deferred to a future phase.
+
+---
+
+## 008: Always-on thinking/reasoning via providerOptions
+
+**Date:** 2026-03-01
+**Phase:** Post-Phase 12 (model update)
+
+**Context:** All three providers now support thinking/reasoning modes: Claude has adaptive thinking, OpenAI has reasoning effort levels, and Gemini has thinkingConfig with thinkingLevel. The question was whether to (a) make thinking a user-configurable setting, (b) enable it by default with opt-out, or (c) always enable it.
+
+**Decision:** Always enable thinking/reasoning for all providers at high levels. Configuration is a static `PROVIDER_OPTIONS` map in the proxy, not user-configurable. Claude uses `adaptive` thinking (model decides when/how deeply), OpenAI uses `reasoningEffort: 'high'`, and Gemini uses `thinkingLevel: 'high'` with `includeThoughts: true`. Reasoning content is streamed to the client via `sendReasoning: true`.
+
+**Consequence:** All responses include thinking/reasoning, which improves response quality but increases token usage and cost. There is no UI toggle to disable thinking. The `PROVIDER_OPTIONS` map is per-provider, not per-model — all models for a given provider share the same thinking config. If a future budget model does not support thinking, this structure will need to become model-aware. Adding user-configurable reasoning effort levels is a future enhancement.

@@ -299,7 +299,7 @@ const PROVIDER_OPTIONS = {
       },
     },
   },
-} satisfies Record<Provider, Record<string, Record<string, string | boolean | Record<string, string | boolean>>>>
+} as const satisfies Record<Provider, Record<string, Record<string, string | boolean | Record<string, string | boolean>>>>
 
 // ---------------------------------------------------------------------------
 // Request Handlers

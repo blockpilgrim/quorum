@@ -22,6 +22,8 @@ src/
     store.ts     # Zustand store (ephemeral UI state)
     utils.ts     # Utility functions (cn(), helpers)
   hooks/         # Custom React hooks
+    useProviderChat.ts    # Per-provider chat hook (wraps useChat)
+    useKeyboardShortcuts.ts # Global keyboard shortcuts (Cmd/Ctrl+N, Cmd/Ctrl+K)
   test/          # Test setup and shared test utilities
 functions/       # Cloudflare Pages Functions (API proxy)
   api/
@@ -366,6 +368,8 @@ export const ModelColumn = memo(function ModelColumn({ provider, label }: Props)
 - Functions have their own `functions/tsconfig.json` separate from the app's TS config
 - Use `createAnthropic()`, `createOpenAI()`, `createGoogleGenerativeAI()` with `{ apiKey }` for BYOK pattern
 - Use `streamText().toUIMessageStreamResponse()` to produce streams compatible with `useChat`
+- Pass `providerOptions` to `streamText()` for provider-specific thinking/reasoning config (see `PROVIDER_OPTIONS` map)
+- Pass `sendReasoning: true` to `toUIMessageStreamResponse()` to stream reasoning content to the client
 - Always add CORS headers to all responses (including error responses)
 
 **Example**:
@@ -374,14 +378,40 @@ import { streamText } from 'ai'
 import { createAnthropic } from '@ai-sdk/anthropic'
 
 export const onRequestPost: PagesFunction = async (context) => {
-  const { model, messages, apiKey } = await context.request.json()
+  const { provider, model, messages, apiKey } = await context.request.json()
   const anthropic = createAnthropic({ apiKey })
-  const result = streamText({ model: anthropic(model), messages })
-  return corsResponse(result.toUIMessageStreamResponse())
+  const result = streamText({
+    model: anthropic(model),
+    messages,
+    providerOptions: PROVIDER_OPTIONS[provider],
+  })
+  return corsResponse(result.toUIMessageStreamResponse({ sendReasoning: true }))
 }
 ```
 
 **Why**: A unified proxy eliminates CORS issues across all three providers and keeps one code path for streaming, error handling, and testing.
+
+---
+
+## Provider Options for Thinking/Reasoning (`PROVIDER_OPTIONS`)
+
+**When to use**: When configuring provider-specific thinking or reasoning capabilities in the proxy.
+
+- `PROVIDER_OPTIONS` is a static `const` map in `functions/api/chat.ts` keyed by `Provider`
+- Each entry contains the `providerOptions` shape expected by the AI SDK for that provider
+- Passed to `streamText()` via `providerOptions: PROVIDER_OPTIONS[provider]`
+- Thinking is always on — all providers use their highest-quality reasoning mode by default
+
+**Current configuration**:
+| Provider | SDK Key | Config |
+|----------|---------|--------|
+| Claude | `anthropic` | `thinking: { type: 'adaptive' }` |
+| OpenAI | `openai` | `reasoningEffort: 'high'` |
+| Gemini | `google` | `thinkingConfig: { thinkingLevel: 'high', includeThoughts: true }` |
+
+**Note**: This config is per-provider, not per-model. All models for a given provider share the same thinking config. If a future budget model does not support thinking, this structure will need to become model-aware.
+
+**Why**: Centralizes provider-specific AI SDK configuration in one place. Adding a new provider or changing reasoning depth is a single-map edit. The `as const satisfies` type validates structure at compile time.
 
 ---
 
@@ -439,7 +469,7 @@ vi.mock('@ai-sdk/anthropic', () => ({ createAnthropic: mockCreateAnthropic }))
 const { messages, send, isLoading, error, stop, clearError, crossFeedIds, tokenCountMap } = useProviderChat({
   provider: 'claude',
   conversationId: activeConversationId,
-  model: 'claude-sonnet-4-20250514',
+  model: 'claude-sonnet-4-6',
 })
 
 // Regular send
@@ -540,6 +570,7 @@ const isLoading = claudeRef.current?.isLoading // React 19 ESLint error
 **When to use**: When referencing model IDs, display names, or provider-level display constants.
 
 - `MODEL_OPTIONS`: Per-provider lists of available models (id + label), ordered by preference (default first)
+- `DEFAULT_MODELS`: Per-provider default model IDs, derived from `MODEL_OPTIONS[provider][0].id`. Used by Zustand store and Dexie settings to avoid duplicating model IDs.
 - `MODEL_DISPLAY_NAMES`: Flat map from model ID to display name
 - `getModelDisplayName(modelId)`: Lookup with fallback to raw ID for unknown models
 - `PROVIDER_LABELS`: Human-readable provider names (`claude` → `'Claude'`)
@@ -550,7 +581,7 @@ const isLoading = claudeRef.current?.isLoading // React 19 ESLint error
 import { getModelDisplayName, PROVIDER_COLORS, PROVIDER_LABELS } from '@/lib/models'
 
 // In a component
-<span>{getModelDisplayName('claude-sonnet-4-20250514')}</span> // → "Sonnet 4"
+<span>{getModelDisplayName('claude-sonnet-4-6')}</span> // → "Sonnet 4.6"
 <div className={cn('h-2 w-2 rounded-full', PROVIDER_COLORS[provider])} />
 ```
 
@@ -749,6 +780,7 @@ const handleDelete = useCallback(async (id: number) => {
 **When to use**: When structured metadata needs to flow from the Cloudflare proxy to the client alongside a streamed response.
 
 - Proxy: Use `messageMetadata` callback in `toUIMessageStreamResponse()` to extract data from stream events (e.g., `finish` event for token usage)
+- Proxy: Pass `sendReasoning: true` to `toUIMessageStreamResponse()` to include thinking/reasoning content in the stream alongside regular text
 - Client: Read `UIMessage.metadata` in `useProviderChat`'s `onFinish` callback
 - Persist to Dexie and update local state (e.g., `tokenCountMap`)
 
@@ -854,3 +886,86 @@ downloadJson(content, filename)
 ```
 
 **Why**: Consistent with the established patterns from `crossfeed.ts` and `pricing.ts`. Pure functions are the most testable unit -- no mocking needed. I/O orchestration stays in the component where it is visible and debuggable.
+
+---
+
+## Responsive Touch Target Sizing
+
+**When to use**: For all interactive elements (buttons, links, tappable areas) that need to work on mobile.
+
+- Use `h-10 w-10 sm:h-8 sm:w-8` for icon buttons (40px on mobile, 32px on desktop)
+- Use `min-h-[44px] sm:min-h-0` for list items and sidebar entries
+- Apply consistently across TopBar, sidebar, and overlay trigger buttons
+
+**Example**:
+```tsx
+<Button
+  variant="ghost"
+  size="icon"
+  className="h-10 w-10 sm:h-8 sm:w-8"
+  aria-label="Toggle sidebar"
+>
+  <MenuIcon className="h-4 w-4" />
+</Button>
+```
+
+**Why**: Apple and WCAG guidelines recommend minimum 44px touch targets on mobile. The responsive class pattern keeps desktop buttons compact while ensuring comfortable mobile tapping. Using `sm:` breakpoint (640px) as the cutoff matches the project's mobile/desktop boundary.
+
+---
+
+## Global Keyboard Shortcuts via `useKeyboardShortcuts` Hook
+
+**When to use**: When adding app-wide keyboard shortcuts that should work regardless of which component has focus.
+
+- All shortcuts live in `src/hooks/useKeyboardShortcuts.ts`
+- Register handlers via `useEffect` on `document` `keydown`
+- Use `e.metaKey || e.ctrlKey` to detect Cmd (macOS) / Ctrl (Windows/Linux)
+- Call `e.preventDefault()` to prevent browser default behavior
+- New shortcuts should be added to this hook, not scattered across components
+
+**Example**:
+```ts
+useKeyboardShortcuts({
+  onNewConversation: handleNewConversation,
+  onSearchOpen: () => setSearchOpen(true),
+})
+```
+
+**Why**: Centralizing keyboard shortcuts in one hook prevents conflicts between components, makes discoverability easy (one file to check), and ensures cleanup is handled via the `useEffect` return.
+
+---
+
+## CSS Animations with Reduced Motion Support
+
+**When to use**: When adding any CSS animation or transition.
+
+- Always pair animations with a `@media (prefers-reduced-motion: reduce)` override
+- Place the override immediately after the animation definition in `src/index.css`
+
+**Example**:
+```css
+.conversation-fade-in {
+  animation: conversationFadeIn 200ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .conversation-fade-in {
+    animation: none;
+  }
+}
+```
+
+**Why**: Users with vestibular disorders or motion sensitivity configure their OS to reduce motion. Respecting this preference is both an accessibility requirement (WCAG 2.3.3) and good UX practice.
+
+---
+
+## Safe-Area Inset Padding for iOS PWA
+
+**When to use**: For elements pinned to the bottom of the viewport (input bars, toolbars) that could be obscured by the iOS home indicator in standalone PWA mode.
+
+**Example**:
+```tsx
+<footer className="pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+```
+
+**Why**: When installed as a PWA with `display: standalone`, the app runs without the Safari chrome. On iPhones with a home indicator bar, bottom-pinned elements can be obscured. `env(safe-area-inset-bottom)` provides the safe padding. Using `max()` ensures a minimum padding even on devices without the inset.

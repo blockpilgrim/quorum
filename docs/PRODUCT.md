@@ -53,7 +53,7 @@ The user currently repeats prompts manually across three AI tools and manually c
 ## Model Configuration Requirements
 - Per-provider model selection is required:
   - Claude family (e.g., Opus, Sonnet)
-  - OpenAI family (e.g., GPT-4o, o1)
+  - OpenAI family (e.g., GPT-5.2, GPT-5.3 Codex)
   - Gemini family (e.g., Pro, Flash)
 - Selected model should be visible and adjustable in UI.
 

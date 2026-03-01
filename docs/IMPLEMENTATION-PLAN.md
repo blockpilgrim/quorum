@@ -205,9 +205,9 @@ Each phase produces a working, testable increment. Phases are sequential — lat
 
 3. **Model selector per provider**
    - Dropdown for each provider with available model variants
-   - Claude: Opus, Sonnet, Haiku
-   - OpenAI: GPT-4o, GPT-4o-mini, o1, o3-mini
-   - Gemini: Pro, Flash
+   - Claude: Sonnet 4.6, Opus 4.6
+   - OpenAI: GPT-5.2, GPT-5.3 Codex
+   - Gemini: 3 Flash, 3.1 Pro
    - Selection persists to Dexie and Zustand
 
 4. **Show selected model in each column header**
