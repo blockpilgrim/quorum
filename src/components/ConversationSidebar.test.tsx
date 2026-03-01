@@ -29,7 +29,7 @@ import { clearAllTables, deleteDatabase } from '@/test/db-helpers'
 const modelConfig = {
   claude: 'claude-sonnet-4-6',
   chatgpt: 'gpt-5.2',
-  gemini: 'gemini-3-flash-preview',
+  gemini: 'gemini-2.5-flash',
 }
 
 beforeEach(async () => {
@@ -244,10 +244,10 @@ describe('ConversationSidebar', () => {
       // Don't change the value -- just press Escape to exit edit mode
       fireEvent.keyDown(input, { key: 'Escape' })
 
-      // Should exit edit mode (rename input disappears)
+      // Should exit edit mode (rename input disappears, button remains)
       await waitFor(() => {
         expect(
-          within(aside).queryByLabelText('Rename conversation'),
+          within(aside).queryByRole('textbox', { name: 'Rename conversation' }),
         ).not.toBeInTheDocument()
       })
     })

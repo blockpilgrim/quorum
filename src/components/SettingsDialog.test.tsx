@@ -25,7 +25,7 @@ beforeEach(async () => {
     selectedModels: {
       claude: 'claude-sonnet-4-6',
       chatgpt: 'gpt-5.2',
-      gemini: 'gemini-3-flash-preview',
+      gemini: 'gemini-2.5-flash',
     },
     streamingStatus: { claude: false, chatgpt: false, gemini: false },
   })

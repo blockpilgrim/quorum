@@ -23,7 +23,7 @@ import { UsageSummary } from '@/components/UsageSummary'
 const defaultModels = {
   claude: 'claude-sonnet-4-6',
   chatgpt: 'gpt-5.2',
-  gemini: 'gemini-3-flash-preview',
+  gemini: 'gemini-2.5-flash',
 }
 
 beforeEach(async () => {

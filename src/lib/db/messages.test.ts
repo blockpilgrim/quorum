@@ -19,7 +19,7 @@ import {
 const defaultModelConfig: ModelConfig = {
   claude: 'claude-sonnet-4-6',
   chatgpt: 'gpt-5.2',
-  gemini: 'gemini-3-flash-preview',
+  gemini: 'gemini-2.5-flash',
 }
 
 async function createTestConversation(): Promise<number> {

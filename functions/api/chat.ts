@@ -105,7 +105,7 @@ function mapError(
       body: {
         error: {
           code: 'rate_limited',
-          message: `Rate limit exceeded for ${provider ?? 'provider'}. Please wait and try again.`,
+          message: `Rate limit exceeded for ${provider ?? 'provider'}. ${message}`,
           provider,
         },
       },
@@ -294,12 +294,12 @@ const PROVIDER_OPTIONS = {
   gemini: {
     google: {
       thinkingConfig: {
-        thinkingLevel: 'high',
+        thinkingBudget: 8192,
         includeThoughts: true,
       },
     },
   },
-} as const satisfies Record<Provider, Record<string, Record<string, string | boolean | Record<string, string | boolean>>>>
+} as const satisfies Record<Provider, Record<string, Record<string, unknown>>>
 
 // ---------------------------------------------------------------------------
 // Request Handlers
@@ -368,6 +368,7 @@ export const onRequestPost: PagesFunction = async (context) => {
     const streamResponse = result.toUIMessageStreamResponse({
       sendReasoning: true,
       onError: (err) => {
+        console.error(`[proxy] ${provider} stream error:`, err)
         const { body } = mapError(err, provider)
         return body.error.message
       },
@@ -387,6 +388,7 @@ export const onRequestPost: PagesFunction = async (context) => {
     // Add CORS headers to the streaming response
     return corsResponse(streamResponse)
   } catch (err) {
+    console.error(`[proxy] ${provider} caught error:`, err)
     const { status, body: errorBody } = mapError(err, provider)
     return errorResponse(status, errorBody)
   }

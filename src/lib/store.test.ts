@@ -10,7 +10,7 @@ const defaultState = {
   selectedModels: {
     claude: 'claude-sonnet-4-6',
     chatgpt: 'gpt-5.2',
-    gemini: 'gemini-3-flash-preview',
+    gemini: 'gemini-2.5-flash',
   },
   theme: 'dark' as const,
   streamingStatus: {
@@ -54,7 +54,7 @@ describe('Zustand store', () => {
     const { selectedModels } = useAppStore.getState()
     expect(selectedModels.claude).toBe('claude-opus-4-6')
     expect(selectedModels.chatgpt).toBe('gpt-5.2')
-    expect(selectedModels.gemini).toBe('gemini-3-flash-preview')
+    expect(selectedModels.gemini).toBe('gemini-2.5-flash')
   })
 
   describe('streamingStatus', () => {

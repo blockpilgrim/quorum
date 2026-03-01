@@ -25,8 +25,8 @@ describe('MODEL_PRICING', () => {
   })
 
   it('has pricing for all Gemini models', () => {
-    expect(MODEL_PRICING['gemini-3-flash-preview']).toBeDefined()
-    expect(MODEL_PRICING['gemini-3.1-pro-preview']).toBeDefined()
+    expect(MODEL_PRICING['gemini-2.5-flash']).toBeDefined()
+    expect(MODEL_PRICING['gemini-2.5-pro']).toBeDefined()
   })
 
   it('has pricing for every model in MODEL_OPTIONS', () => {
@@ -93,13 +93,13 @@ describe('MODEL_PRICING', () => {
   })
 
   it('has correct specific pricing for Gemini models', () => {
-    expect(MODEL_PRICING['gemini-3-flash-preview']).toEqual({
-      inputPer1M: 0.5,
-      outputPer1M: 3,
+    expect(MODEL_PRICING['gemini-2.5-flash']).toEqual({
+      inputPer1M: 0.15,
+      outputPer1M: 0.6,
     })
-    expect(MODEL_PRICING['gemini-3.1-pro-preview']).toEqual({
-      inputPer1M: 2,
-      outputPer1M: 12,
+    expect(MODEL_PRICING['gemini-2.5-pro']).toEqual({
+      inputPer1M: 1.25,
+      outputPer1M: 10,
     })
   })
 
@@ -136,14 +136,14 @@ describe('calculateCost', () => {
     expect(cost).toBeCloseTo(0.03675, 6)
   })
 
-  it('calculates cost for Gemini 3 Flash (cheapest model)', () => {
-    // 10000 input tokens at $0.50/1M = $0.005
-    // 5000 output tokens at $3/1M = $0.015
-    const cost = calculateCost('gemini-3-flash-preview', {
+  it('calculates cost for Gemini 2.5 Flash (cheapest model)', () => {
+    // 10000 input tokens at $0.15/1M = $0.0015
+    // 5000 output tokens at $0.60/1M = $0.003
+    const cost = calculateCost('gemini-2.5-flash', {
       input: 10000,
       output: 5000,
     })
-    expect(cost).toBeCloseTo(0.02, 6)
+    expect(cost).toBeCloseTo(0.0045, 6)
   })
 
   it('returns null for unknown models', () => {

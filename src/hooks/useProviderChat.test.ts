@@ -193,7 +193,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'gemini',
           conversationId: 1,
-          model: 'gemini-3-flash-preview',
+          model: 'gemini-2.5-flash',
         }),
       )
 

@@ -190,7 +190,7 @@ describe('provider routing', () => {
   it('routes gemini to Google', async () => {
     setupStreamTextSuccess()
     const context = createMockContext(
-      validBody({ provider: 'gemini', model: 'gemini-3-flash-preview' }),
+      validBody({ provider: 'gemini', model: 'gemini-2.5-flash' }),
     )
     await onRequestPost(
       context as unknown as Parameters<typeof onRequestPost>[0],
@@ -311,11 +311,11 @@ describe('providerOptions (thinking/reasoning)', () => {
   })
 
   it('passes google thinkingConfig for gemini provider', async () => {
-    const args = await captureStreamTextArgs('gemini', 'gemini-3-flash-preview')
+    const args = await captureStreamTextArgs('gemini', 'gemini-2.5-flash')
     expect(args.providerOptions).toBeDefined()
     expect(args.providerOptions!.google).toEqual({
       thinkingConfig: {
-        thinkingLevel: 'high',
+        thinkingBudget: 8192,
         includeThoughts: true,
       },
     })
@@ -325,7 +325,7 @@ describe('providerOptions (thinking/reasoning)', () => {
     for (const [provider, model] of [
       ['claude', 'claude-sonnet-4-6'],
       ['chatgpt', 'gpt-5.2'],
-      ['gemini', 'gemini-3-flash-preview'],
+      ['gemini', 'gemini-2.5-flash'],
     ] as const) {
       vi.clearAllMocks()
       mockAnthropicModel.mockReturnValue('anthropic-model-instance')
