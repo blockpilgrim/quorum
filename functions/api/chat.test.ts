@@ -199,6 +199,54 @@ describe('provider routing', () => {
       apiKey: 'sk-test-key-123',
     })
   })
+
+  it('passes model ID to the provider factory function', async () => {
+    setupStreamTextSuccess()
+    const context = createMockContext(
+      validBody({ provider: 'gemini', model: 'google/gemini-3.1-pro-preview' }),
+    )
+    await onRequestPost(
+      context as unknown as Parameters<typeof onRequestPost>[0],
+    )
+    // The factory returned by createOpenRouter should be called with the model ID
+    expect(mockOpenRouterModel).toHaveBeenCalledWith(
+      'google/gemini-3.1-pro-preview',
+    )
+  })
+
+  it('passes model ID to Anthropic factory for claude', async () => {
+    setupStreamTextSuccess()
+    const context = createMockContext(
+      validBody({ provider: 'claude', model: 'claude-sonnet-4-6' }),
+    )
+    await onRequestPost(
+      context as unknown as Parameters<typeof onRequestPost>[0],
+    )
+    expect(mockAnthropicModel).toHaveBeenCalledWith('claude-sonnet-4-6')
+  })
+
+  it('passes model ID to OpenAI factory for chatgpt', async () => {
+    setupStreamTextSuccess()
+    const context = createMockContext(
+      validBody({ provider: 'chatgpt', model: 'gpt-5.2' }),
+    )
+    await onRequestPost(
+      context as unknown as Parameters<typeof onRequestPost>[0],
+    )
+    expect(mockOpenAIModel).toHaveBeenCalledWith('gpt-5.2')
+  })
+
+  it('does not call Anthropic or OpenAI factories for gemini requests', async () => {
+    setupStreamTextSuccess()
+    const context = createMockContext(
+      validBody({ provider: 'gemini', model: 'google/gemini-3.1-pro-preview' }),
+    )
+    await onRequestPost(
+      context as unknown as Parameters<typeof onRequestPost>[0],
+    )
+    expect(mockCreateAnthropic).not.toHaveBeenCalled()
+    expect(mockCreateOpenAI).not.toHaveBeenCalled()
+  })
 })
 
 describe('successful streaming', () => {
@@ -270,6 +318,52 @@ describe('error mapping', () => {
     )
     expect(response.status).toBe(500)
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*')
+  })
+
+  it('maps model not found to 400', async () => {
+    mockStreamText.mockImplementation(() => {
+      throw new Error('Model not found: invalid-model')
+    })
+    const context = createMockContext(validBody())
+    const response = await onRequestPost(
+      context as unknown as Parameters<typeof onRequestPost>[0],
+    )
+    expect(response.status).toBe(400)
+    const json = await parseResponseBody(response)
+    expect((json.error as Record<string, unknown>).code).toBe('invalid_model')
+  })
+
+  it('maps auth error for gemini (OpenRouter) requests to 401', async () => {
+    mockStreamText.mockImplementation(() => {
+      throw new Error('Invalid API key provided')
+    })
+    const context = createMockContext(
+      validBody({ provider: 'gemini', model: 'google/gemini-3.1-pro-preview' }),
+    )
+    const response = await onRequestPost(
+      context as unknown as Parameters<typeof onRequestPost>[0],
+    )
+    expect(response.status).toBe(401)
+    const json = await parseResponseBody(response)
+    const error = json.error as Record<string, unknown>
+    expect(error.code).toBe('invalid_api_key')
+    expect(error.provider).toBe('gemini')
+    expect(error.message).toContain('gemini')
+  })
+
+  it('maps rate limit for gemini (OpenRouter) requests to 429', async () => {
+    mockStreamText.mockImplementation(() => {
+      throw new Error('Rate limit exceeded')
+    })
+    const context = createMockContext(
+      validBody({ provider: 'gemini', model: 'google/gemini-3.1-pro-preview' }),
+    )
+    const response = await onRequestPost(
+      context as unknown as Parameters<typeof onRequestPost>[0],
+    )
+    expect(response.status).toBe(429)
+    const json = await parseResponseBody(response)
+    expect((json.error as Record<string, unknown>).provider).toBe('gemini')
   })
 })
 

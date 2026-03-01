@@ -364,7 +364,7 @@ export const ModelColumn = memo(function ModelColumn({ provider, label }: Props)
 - Export `onRequestPost` for POST handlers, `onRequestOptions` for CORS preflight
 - The `PagesFunction` type from `@cloudflare/workers-types` is available globally (no import needed)
 - Functions have their own `functions/tsconfig.json` separate from the app's TS config
-- Use `createAnthropic()`, `createOpenAI()`, `createGoogleGenerativeAI()` with `{ apiKey }` for BYOK pattern
+- Use `createAnthropic()`, `createOpenAI()`, `createOpenRouter()` with `{ apiKey }` for BYOK pattern
 - Use `streamText().toUIMessageStreamResponse()` to produce streams compatible with `useChat`
 - Pass `providerOptions` to `streamText()` for provider-specific thinking/reasoning config (see `PROVIDER_OPTIONS` map)
 - Pass `sendReasoning: true` to `toUIMessageStreamResponse()` to stream reasoning content to the client
@@ -405,7 +405,7 @@ export const onRequestPost: PagesFunction = async (context) => {
 |----------|---------|--------|
 | Claude | `anthropic` | `thinking: { type: 'adaptive' }` |
 | OpenAI | `openai` | `reasoningEffort: 'high'` |
-| Gemini | `google` | `thinkingConfig: { thinkingLevel: 'high', includeThoughts: true }` |
+| Gemini | `openrouter` | `reasoning: { effort: 'high' }` |
 
 **Note**: This config is per-provider, not per-model. All models for a given provider share the same thinking config. If a future budget model does not support thinking, this structure will need to become model-aware.
 

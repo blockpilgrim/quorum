@@ -122,6 +122,38 @@ describe('SettingsDialog', () => {
       })
       expect(claudeInput).toHaveAttribute('type', 'password')
     })
+
+    it('shows provider-specific placeholder text for API key inputs', async () => {
+      await openDialog()
+
+      const claudeInput = screen.getByPlaceholderText(
+        'Enter your Claude API key',
+      )
+      const chatgptInput = screen.getByPlaceholderText(
+        'Enter your ChatGPT API key',
+      )
+      const geminiInput = screen.getByPlaceholderText(
+        'Enter your OpenRouter API key',
+      )
+
+      expect(claudeInput).toBeInTheDocument()
+      expect(chatgptInput).toBeInTheDocument()
+      expect(geminiInput).toBeInTheDocument()
+    })
+
+    it('shows OpenRouter (not Gemini) in the Gemini API key placeholder', async () => {
+      await openDialog()
+
+      // The Gemini provider should reference OpenRouter since Gemini is
+      // routed through OpenRouter's API
+      const geminiInput = screen.getByLabelText('API Key', {
+        selector: '#gemini-api-key',
+      })
+      expect(geminiInput).toHaveAttribute(
+        'placeholder',
+        'Enter your OpenRouter API key',
+      )
+    })
   })
 
   describe('API key show/hide toggle', () => {

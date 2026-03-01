@@ -278,7 +278,7 @@ function createModel(provider: Provider, model: string, apiKey: string) {
  *
  * - Claude: adaptive thinking (model decides when and how deeply to think)
  * - OpenAI: reasoning effort set to 'high'
- * - Gemini: thinkingConfig with high level and thoughts included
+ * - Gemini: OpenRouter reasoning with effort set to 'high'
  */
 const PROVIDER_OPTIONS = {
   claude: {

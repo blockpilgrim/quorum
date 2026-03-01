@@ -58,6 +58,19 @@ describe('MODEL_OPTIONS', () => {
     expect(ids).toContain('google/gemini-3.1-pro-preview')
   })
 
+  it('uses OpenRouter-style model IDs for gemini (prefixed with provider namespace)', () => {
+    for (const model of MODEL_OPTIONS.gemini) {
+      expect(
+        model.id.includes('/'),
+        `Gemini model ${model.id} should use OpenRouter format with a / separator`,
+      ).toBe(true)
+    }
+  })
+
+  it('has exactly one gemini model', () => {
+    expect(MODEL_OPTIONS.gemini).toHaveLength(1)
+  })
+
   it('has the default model first for each provider', () => {
     expect(MODEL_OPTIONS.claude[0].id).toBe('claude-sonnet-4-6')
     expect(MODEL_OPTIONS.chatgpt[0].id).toBe('gpt-5.2')

@@ -102,6 +102,19 @@ Significant decisions made during implementation. Referenced by CLAUDE.md's Comp
 
 **Context:** All three providers now support thinking/reasoning modes: Claude has adaptive thinking, OpenAI has reasoning effort levels, and Gemini has thinkingConfig with thinkingLevel. The question was whether to (a) make thinking a user-configurable setting, (b) enable it by default with opt-out, or (c) always enable it.
 
-**Decision:** Always enable thinking/reasoning for all providers at high levels. Configuration is a static `PROVIDER_OPTIONS` map in the proxy, not user-configurable. Claude uses `adaptive` thinking (model decides when/how deeply), OpenAI uses `reasoningEffort: 'high'`, and Gemini uses `thinkingLevel: 'high'` with `includeThoughts: true`. Reasoning content is streamed to the client via `sendReasoning: true`.
+**Decision:** Always enable thinking/reasoning for all providers at high levels. Configuration is a static `PROVIDER_OPTIONS` map in the proxy, not user-configurable. Claude uses `adaptive` thinking (model decides when/how deeply), OpenAI uses `reasoningEffort: 'high'`, and Gemini uses `openrouter.reasoning: { effort: 'high' }` (OpenRouter maps this to Google's `thinkingLevel`). Reasoning content is streamed to the client via `sendReasoning: true`.
 
 **Consequence:** All responses include thinking/reasoning, which improves response quality but increases token usage and cost. There is no UI toggle to disable thinking. The `PROVIDER_OPTIONS` map is per-provider, not per-model — all models for a given provider share the same thinking config. If a future budget model does not support thinking, this structure will need to become model-aware. Adding user-configurable reasoning effort levels is a future enhancement.
+
+---
+
+## 009: Route Gemini through OpenRouter
+
+**Date:** 2026-03-01
+**Phase:** Post-Phase 12
+
+**Context:** The `@ai-sdk/google` provider called Google's Generative AI API directly, which blocks browser CORS and required maintaining a separate provider adapter. OpenRouter provides a unified API gateway with an official Vercel AI SDK provider (`@openrouter/ai-sdk-provider`) that supports Gemini models and maps `reasoning.effort` to Google's `thinkingLevel` parameter.
+
+**Decision:** Replace `@ai-sdk/google` with `@openrouter/ai-sdk-provider`. Route all Gemini requests through OpenRouter using model ID `google/gemini-3.1-pro-preview`. Use `openrouter.reasoning: { effort: 'high' }` for thinking config. Users provide an OpenRouter API key instead of a Google API key for the Gemini column.
+
+**Consequence:** Gemini reduced from two models (2.5 Flash + 2.5 Pro) to one (3.1 Pro). Users need an OpenRouter account/key instead of a Google AI key. The settings placeholder for Gemini says "OpenRouter" to make this clear. OpenRouter pricing may differ slightly from Google direct. Existing users with Google API keys stored in IndexedDB will need to replace them with OpenRouter keys.

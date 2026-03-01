@@ -109,7 +109,7 @@ Each phase produces a working, testable increment. Phases are sequential — lat
 2. **Build the proxy endpoint**
    - Single route: `POST /api/chat`
    - Accept body: `{ provider, model, messages, apiKey }`
-   - Use AI SDK's `streamText` with the appropriate provider adapter (`@ai-sdk/anthropic`, `@ai-sdk/openai`, `@ai-sdk/google`)
+   - Use AI SDK's `streamText` with the appropriate provider adapter (`@ai-sdk/anthropic`, `@ai-sdk/openai`, `@openrouter/ai-sdk-provider`)
    - Stream response back with proper CORS headers
    - Return token usage metadata in the stream
 
@@ -207,7 +207,7 @@ Each phase produces a working, testable increment. Phases are sequential — lat
    - Dropdown for each provider with available model variants
    - Claude: Sonnet 4.6, Opus 4.6
    - OpenAI: GPT-5.2, GPT-5.3 Codex
-   - Gemini: 3 Flash, 3.1 Pro
+   - Gemini: 3.1 Pro (via OpenRouter)
    - Selection persists to Dexie and Zustand
 
 4. **Show selected model in each column header**

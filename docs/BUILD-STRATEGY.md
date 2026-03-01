@@ -20,7 +20,7 @@
 
 ### AI Streaming: Vercel AI SDK
 
-**Decision**: Use the `ai` package (AI SDK core) with `@ai-sdk/react` on the client and `@ai-sdk/anthropic`, `@ai-sdk/openai`, `@ai-sdk/google` provider adapters on the server proxy.
+**Decision**: Use the `ai` package (AI SDK core) with `@ai-sdk/react` on the client and `@ai-sdk/anthropic`, `@ai-sdk/openai`, `@openrouter/ai-sdk-provider` provider adapters on the server proxy.
 
 **Rationale**: The AI SDK provides a unified interface across all three providers. The `useChat` hook handles streaming state, message accumulation, loading/error states, and abort — all things you'd otherwise build from scratch. There is a documented pattern for exactly this use case: [streaming multiple models in parallel with `useChat`](https://www.robinwieruch.de/react-ai-sdk-multiple-streams/). Each model column gets its own `useChat` instance, sharing the same user input but maintaining independent message histories.
 
@@ -120,11 +120,11 @@ A Cloudflare Worker solves this uniformly: it receives requests from the SPA, ca
 │   ← stream response back with CORS                      │
 │                                                          │
 │   Uses: @ai-sdk/anthropic, @ai-sdk/openai,              │
-│         @ai-sdk/google, streamText                       │
+│         @openrouter/ai-sdk-provider, streamText          │
 └─────────┬──────────────┬──────────────┬─────────────────┘
           │              │              │
           ▼              ▼              ▼
-     Anthropic API   OpenAI API   Google AI API
+     Anthropic API   OpenAI API   OpenRouter API
 ```
 
 **Data flow for a user message:**
