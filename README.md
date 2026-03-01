@@ -73,8 +73,12 @@ You'll need API keys from at least one provider — enter them in the settings d
 
 For the proxy in production, deploy to Cloudflare Pages — `wrangler.toml` is preconfigured. The free tier (100K requests/day) is more than sufficient.
 
+## Live Demo
+
+**[cortex-25w.pages.dev](https://cortex-25w.pages.dev/)**
+
+Bring your own API keys — enter them in the settings dialog (gear icon).
+
 ## Status
 
-Feature-complete MVP. All 13 implementation phases done except deployment. 405 tests passing. Built over a focused sprint as a daily-driver tool for comparing AI model outputs.
-
-Not yet deployed to a public URL.
+Feature-complete MVP. Deployed on Cloudflare Pages. 405 tests passing. Built over a focused sprint as a daily-driver tool for comparing AI model outputs.
