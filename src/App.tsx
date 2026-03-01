@@ -23,6 +23,7 @@ import { InputBar } from '@/components/InputBar'
 import { useAppStore } from '@/lib/store'
 import {
   createConversation,
+  getConversation,
   getSettings,
   getMessagesByThread,
   updateConversation,
@@ -33,6 +34,25 @@ import {
   getNextCrossFeedRound,
 } from '@/lib/crossfeed'
 import { db } from '@/lib/db'
+
+/**
+ * Generate a conversation title from the user's first message.
+ * Truncates at 60 characters on a word boundary, appending "..." if needed.
+ */
+function generateTitle(text: string): string {
+  const maxLength = 60
+  const trimmed = text.trim().replace(/\n+/g, ' ')
+  if (trimmed.length <= maxLength) return trimmed
+
+  // Truncate at the last space before maxLength to avoid cutting words
+  const truncated = trimmed.slice(0, maxLength)
+  const lastSpace = truncated.lastIndexOf(' ')
+  if (lastSpace > maxLength * 0.4) {
+    return truncated.slice(0, lastSpace) + '...'
+  }
+  // If no good word boundary, just hard-truncate
+  return truncated + '...'
+}
 
 function App() {
   const activeConversationId = useAppStore((s) => s.activeConversationId)
@@ -55,6 +75,24 @@ function App() {
     }
     syncSettings()
   }, [setSelectedModels])
+
+  // Restore model config from the conversation record when switching conversations.
+  // Each conversation stores the model selections that were active when it was created.
+  useEffect(() => {
+    if (activeConversationId === null) return
+
+    async function restoreModelConfig() {
+      try {
+        const conversation = await getConversation(activeConversationId!)
+        if (conversation?.modelConfig) {
+          setSelectedModels(conversation.modelConfig)
+        }
+      } catch (err) {
+        console.error('[App] Failed to restore model config:', err)
+      }
+    }
+    restoreModelConfig()
+  }, [activeConversationId, setSelectedModels])
 
   // Derived streaming state from the Zustand store (safe to read during render)
   const isAnyStreaming =
@@ -160,7 +198,7 @@ function App() {
         // Auto-create a conversation if none is active
         if (conversationId === null) {
           conversationId = await createConversation({
-            title: text.slice(0, 50) + (text.length > 50 ? '...' : ''),
+            title: generateTitle(text),
             modelConfig: { ...selectedModels },
           })
           setActiveConversationId(conversationId)

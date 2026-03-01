@@ -1,14 +1,33 @@
 /**
- * Conversation sidebar — lists past conversations and allows switching.
+ * Conversation sidebar -- lists past conversations and allows switching,
+ * renaming, and deleting.
  *
  * On desktop (md+), renders as an inline sidebar panel.
  * On mobile (<md), renders as a Sheet overlay.
  */
 
 import { useLiveQuery } from 'dexie-react-hooks'
-import { MessageSquareIcon, PlusIcon } from 'lucide-react'
-import { useCallback } from 'react'
+import {
+  CheckIcon,
+  MessageSquareIcon,
+  PencilIcon,
+  PlusIcon,
+  TrashIcon,
+  XIcon,
+} from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Sheet,
@@ -17,9 +36,10 @@ import {
   SheetHeader,
   SheetTitle,
 } from '@/components/ui/sheet'
-import { db } from '@/lib/db'
-import { cn } from '@/lib/utils'
+import { db, deleteConversation, updateConversation } from '@/lib/db'
+import type { Conversation } from '@/lib/db/types'
 import { useAppStore } from '@/lib/store'
+import { cn } from '@/lib/utils'
 
 interface ConversationSidebarProps {
   onNewConversation: () => void
@@ -38,7 +58,7 @@ export function ConversationSidebar({
 
   return (
     <>
-      {/* Desktop: inline sidebar — stays open on interaction */}
+      {/* Desktop: inline sidebar -- stays open on interaction */}
       {sidebarOpen && (
         <aside
           role="navigation"
@@ -48,7 +68,7 @@ export function ConversationSidebar({
         </aside>
       )}
 
-      {/* Mobile: Sheet overlay — closes on interaction */}
+      {/* Mobile: Sheet overlay -- closes on interaction */}
       <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
         <SheetContent
           side="left"
@@ -106,6 +126,31 @@ function SidebarContent({
     onAfterAction?.()
   }, [onNewConversation, onAfterAction])
 
+  const handleDelete = useCallback(
+    async (id: number) => {
+      try {
+        await deleteConversation(id)
+        // If the deleted conversation was active, clear the selection
+        if (activeConversationId === id) {
+          setActiveConversationId(null)
+        }
+      } catch (err) {
+        console.error('[Sidebar] Failed to delete conversation:', err)
+      }
+    },
+    [activeConversationId, setActiveConversationId],
+  )
+
+  const handleRename = useCallback(async (id: number, newTitle: string) => {
+    const trimmed = newTitle.trim()
+    if (!trimmed) return
+    try {
+      await updateConversation(id, { title: trimmed })
+    } catch (err) {
+      console.error('[Sidebar] Failed to rename conversation:', err)
+    }
+  }, [])
+
   return (
     <div className="flex h-full flex-col">
       <div className="p-2">
@@ -131,24 +176,210 @@ function SidebarContent({
             </div>
           ) : (
             conversations.map((conv) => (
-              <button
+              <ConversationItem
                 key={conv.id}
-                onClick={() => conv.id !== undefined && handleSelect(conv.id)}
-                className={cn(
-                  'flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors',
-                  'hover:bg-accent hover:text-accent-foreground',
-                  activeConversationId === conv.id
-                    ? 'bg-accent text-accent-foreground'
-                    : 'text-foreground',
-                )}
-              >
-                <MessageSquareIcon className="h-4 w-4 shrink-0" />
-                <span className="truncate">{conv.title}</span>
-              </button>
+                conversation={conv}
+                isActive={activeConversationId === conv.id}
+                onSelect={handleSelect}
+                onRename={handleRename}
+                onDelete={handleDelete}
+              />
             ))
           )}
         </div>
       </ScrollArea>
     </div>
+  )
+}
+
+/**
+ * A single conversation item in the sidebar.
+ *
+ * Supports:
+ * - Click to select
+ * - Hover to reveal rename/delete action buttons
+ * - Inline rename via an input field
+ * - Delete with AlertDialog confirmation
+ */
+function ConversationItem({
+  conversation,
+  isActive,
+  onSelect,
+  onRename,
+  onDelete,
+}: {
+  conversation: Conversation
+  isActive: boolean
+  onSelect: (id: number) => void
+  onRename: (id: number, newTitle: string) => void
+  onDelete: (id: number) => void
+}) {
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [renameValue, setRenameValue] = useState('')
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const id = conversation.id!
+
+  // Focus the input when entering rename mode
+  useEffect(() => {
+    if (isRenaming) {
+      // Use requestAnimationFrame to ensure the input is rendered before focusing
+      requestAnimationFrame(() => {
+        inputRef.current?.focus()
+        inputRef.current?.select()
+      })
+    }
+  }, [isRenaming])
+
+  const startRename = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation()
+      setRenameValue(conversation.title)
+      setIsRenaming(true)
+    },
+    [conversation.title],
+  )
+
+  const confirmRename = useCallback(() => {
+    const trimmed = renameValue.trim()
+    if (trimmed && trimmed !== conversation.title) {
+      onRename(id, trimmed)
+    }
+    setIsRenaming(false)
+  }, [renameValue, conversation.title, id, onRename])
+
+  const cancelRename = useCallback(() => {
+    setRenameValue(conversation.title)
+    setIsRenaming(false)
+  }, [conversation.title])
+
+  const handleRenameKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        confirmRename()
+      } else if (e.key === 'Escape') {
+        e.preventDefault()
+        cancelRename()
+      }
+    },
+    [confirmRename, cancelRename],
+  )
+
+  const handleDeleteClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    setDeleteDialogOpen(true)
+  }, [])
+
+  const handleConfirmDelete = useCallback(() => {
+    onDelete(id)
+    setDeleteDialogOpen(false)
+  }, [id, onDelete])
+
+  if (isRenaming) {
+    return (
+      <div className="flex items-center gap-1 rounded-md px-1 py-0.5">
+        <Input
+          ref={inputRef}
+          value={renameValue}
+          onChange={(e) => setRenameValue(e.target.value)}
+          onKeyDown={handleRenameKeyDown}
+          onBlur={confirmRename}
+          className="h-7 text-sm"
+          aria-label="Rename conversation"
+        />
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 shrink-0"
+          onClick={confirmRename}
+          aria-label="Confirm rename"
+        >
+          <CheckIcon className="h-3 w-3" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6 shrink-0"
+          onMouseDown={(e) => {
+            // Prevent onBlur from firing before cancel click
+            e.preventDefault()
+          }}
+          onClick={cancelRename}
+          aria-label="Cancel rename"
+        >
+          <XIcon className="h-3 w-3" />
+        </Button>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => onSelect(id)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault()
+            onSelect(id)
+          }
+        }}
+        className={cn(
+          'group flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors',
+          'hover:bg-accent hover:text-accent-foreground',
+          isActive ? 'bg-accent text-accent-foreground' : 'text-foreground',
+        )}
+      >
+        <MessageSquareIcon className="h-4 w-4 shrink-0" />
+        <span className="min-w-0 flex-1 truncate">{conversation.title}</span>
+
+        {/* Action buttons -- visible on hover */}
+        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={startRename}
+            aria-label="Rename conversation"
+          >
+            <PencilIcon className="h-3 w-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={handleDeleteClick}
+            aria-label="Delete conversation"
+          >
+            <TrashIcon className="h-3 w-3" />
+          </Button>
+        </div>
+      </div>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete conversation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete &ldquo;{conversation.title}&rdquo;
+              and all its messages. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={handleConfirmDelete}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   )
 }
