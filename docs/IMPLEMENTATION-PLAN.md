@@ -189,7 +189,7 @@ Each phase produces a working, testable increment. Phases are sequential — lat
 
 ---
 
-- [ ] ## Phase 7: Settings & API Key Management
+- [x] ## Phase 7: Settings & API Key Management
 
 **Goal**: User can enter API keys and select models per provider. Settings persist.
 
