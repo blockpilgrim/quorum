@@ -2,8 +2,8 @@
  * Cloudflare Pages Function: POST /api/chat
  *
  * Stateless proxy that forwards chat requests to AI providers (Anthropic,
- * OpenAI, Google) using the Vercel AI SDK. Streams responses back to the
- * SPA with CORS headers.
+ * OpenAI, OpenRouter for Gemini) using the Vercel AI SDK. Streams responses
+ * back to the SPA with CORS headers.
  *
  * Request body: { provider, model, messages, apiKey }
  * Response: UI message stream (SSE) compatible with @ai-sdk/react useChat
@@ -12,7 +12,7 @@
 import { streamText } from 'ai'
 import { createAnthropic } from '@ai-sdk/anthropic'
 import { createOpenAI } from '@ai-sdk/openai'
-import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -267,8 +267,8 @@ function createModel(provider: Provider, model: string, apiKey: string) {
       return openai(model)
     }
     case 'gemini': {
-      const google = createGoogleGenerativeAI({ apiKey })
-      return google(model)
+      const openrouter = createOpenRouter({ apiKey })
+      return openrouter(model)
     }
   }
 }
@@ -292,11 +292,8 @@ const PROVIDER_OPTIONS = {
     },
   },
   gemini: {
-    google: {
-      thinkingConfig: {
-        thinkingBudget: 8192,
-        includeThoughts: true,
-      },
+    openrouter: {
+      reasoning: { effort: 'high' },
     },
   },
 } as const satisfies Record<Provider, Record<string, Record<string, unknown>>>

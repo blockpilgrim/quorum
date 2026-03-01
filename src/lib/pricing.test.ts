@@ -25,8 +25,7 @@ describe('MODEL_PRICING', () => {
   })
 
   it('has pricing for all Gemini models', () => {
-    expect(MODEL_PRICING['gemini-2.5-flash']).toBeDefined()
-    expect(MODEL_PRICING['gemini-2.5-pro']).toBeDefined()
+    expect(MODEL_PRICING['google/gemini-3.1-pro-preview']).toBeDefined()
   })
 
   it('has pricing for every model in MODEL_OPTIONS', () => {
@@ -60,6 +59,8 @@ describe('MODEL_PRICING', () => {
       'o1',
       'o3-mini',
       'gemini-2.0-flash',
+      'gemini-2.5-flash',
+      'gemini-2.5-pro',
       'gemini-2.5-pro-preview-06-05',
     ]
     for (const old of deprecated) {
@@ -93,18 +94,14 @@ describe('MODEL_PRICING', () => {
   })
 
   it('has correct specific pricing for Gemini models', () => {
-    expect(MODEL_PRICING['gemini-2.5-flash']).toEqual({
-      inputPer1M: 0.15,
-      outputPer1M: 0.6,
-    })
-    expect(MODEL_PRICING['gemini-2.5-pro']).toEqual({
+    expect(MODEL_PRICING['google/gemini-3.1-pro-preview']).toEqual({
       inputPer1M: 1.25,
       outputPer1M: 10,
     })
   })
 
-  it('contains exactly 6 models (no extras)', () => {
-    expect(Object.keys(MODEL_PRICING).length).toBe(6)
+  it('contains exactly 5 models (no extras)', () => {
+    expect(Object.keys(MODEL_PRICING).length).toBe(5)
   })
 })
 
@@ -136,14 +133,14 @@ describe('calculateCost', () => {
     expect(cost).toBeCloseTo(0.03675, 6)
   })
 
-  it('calculates cost for Gemini 2.5 Flash (cheapest model)', () => {
-    // 10000 input tokens at $0.15/1M = $0.0015
-    // 5000 output tokens at $0.60/1M = $0.003
-    const cost = calculateCost('gemini-2.5-flash', {
+  it('calculates cost for Gemini 3.1 Pro', () => {
+    // 10000 input tokens at $1.25/1M = $0.0125
+    // 5000 output tokens at $10/1M = $0.05
+    const cost = calculateCost('google/gemini-3.1-pro-preview', {
       input: 10000,
       output: 5000,
     })
-    expect(cost).toBeCloseTo(0.0045, 6)
+    expect(cost).toBeCloseTo(0.0625, 6)
   })
 
   it('returns null for unknown models', () => {

@@ -32,9 +32,8 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   'gpt-5.2': { inputPer1M: 1.75, outputPer1M: 14 },
   'gpt-5.3-codex': { inputPer1M: 1.75, outputPer1M: 14 },
 
-  // Gemini
-  'gemini-2.5-pro': { inputPer1M: 1.25, outputPer1M: 10 },
-  'gemini-2.5-flash': { inputPer1M: 0.15, outputPer1M: 0.6 },
+  // Gemini (via OpenRouter)
+  'google/gemini-3.1-pro-preview': { inputPer1M: 1.25, outputPer1M: 10 },
 }
 
 // ---------------------------------------------------------------------------

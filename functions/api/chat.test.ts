@@ -28,10 +28,10 @@ vi.mock('@ai-sdk/openai', () => ({
   createOpenAI: (...args: unknown[]) => mockCreateOpenAI(...args),
 }))
 
-const mockGoogleModel = vi.fn()
-const mockCreateGoogle = vi.fn(() => mockGoogleModel)
-vi.mock('@ai-sdk/google', () => ({
-  createGoogleGenerativeAI: (...args: unknown[]) => mockCreateGoogle(...args),
+const mockOpenRouterModel = vi.fn()
+const mockCreateOpenRouter = vi.fn(() => mockOpenRouterModel)
+vi.mock('@openrouter/ai-sdk-provider', () => ({
+  createOpenRouter: (...args: unknown[]) => mockCreateOpenRouter(...args),
 }))
 
 // ---------------------------------------------------------------------------
@@ -99,7 +99,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   mockAnthropicModel.mockReturnValue('anthropic-model-instance')
   mockOpenAIModel.mockReturnValue('openai-model-instance')
-  mockGoogleModel.mockReturnValue('google-model-instance')
+  mockOpenRouterModel.mockReturnValue('openrouter-model-instance')
 })
 
 describe('CORS preflight', () => {
@@ -187,15 +187,15 @@ describe('provider routing', () => {
     })
   })
 
-  it('routes gemini to Google', async () => {
+  it('routes gemini to OpenRouter', async () => {
     setupStreamTextSuccess()
     const context = createMockContext(
-      validBody({ provider: 'gemini', model: 'gemini-2.5-flash' }),
+      validBody({ provider: 'gemini', model: 'google/gemini-3.1-pro-preview' }),
     )
     await onRequestPost(
       context as unknown as Parameters<typeof onRequestPost>[0],
     )
-    expect(mockCreateGoogle).toHaveBeenCalledWith({
+    expect(mockCreateOpenRouter).toHaveBeenCalledWith({
       apiKey: 'sk-test-key-123',
     })
   })
@@ -310,14 +310,11 @@ describe('providerOptions (thinking/reasoning)', () => {
     })
   })
 
-  it('passes google thinkingConfig for gemini provider', async () => {
-    const args = await captureStreamTextArgs('gemini', 'gemini-2.5-flash')
+  it('passes openrouter reasoning for gemini provider', async () => {
+    const args = await captureStreamTextArgs('gemini', 'google/gemini-3.1-pro-preview')
     expect(args.providerOptions).toBeDefined()
-    expect(args.providerOptions!.google).toEqual({
-      thinkingConfig: {
-        thinkingBudget: 8192,
-        includeThoughts: true,
-      },
+    expect(args.providerOptions!.openrouter).toEqual({
+      reasoning: { effort: 'high' },
     })
   })
 
@@ -325,12 +322,12 @@ describe('providerOptions (thinking/reasoning)', () => {
     for (const [provider, model] of [
       ['claude', 'claude-sonnet-4-6'],
       ['chatgpt', 'gpt-5.2'],
-      ['gemini', 'gemini-2.5-flash'],
+      ['gemini', 'google/gemini-3.1-pro-preview'],
     ] as const) {
       vi.clearAllMocks()
       mockAnthropicModel.mockReturnValue('anthropic-model-instance')
       mockOpenAIModel.mockReturnValue('openai-model-instance')
-      mockGoogleModel.mockReturnValue('google-model-instance')
+      mockOpenRouterModel.mockReturnValue('openrouter-model-instance')
 
       const args = await captureStreamTextArgs(provider, model)
       expect(

@@ -163,7 +163,7 @@ function ProviderSection({
             type={showKey ? 'text' : 'password'}
             value={localKey}
             onChange={(e) => handleApiKeyChange(e.target.value)}
-            placeholder={`Enter your ${PROVIDER_LABELS[provider]} API key`}
+            placeholder={`Enter your ${provider === 'gemini' ? 'OpenRouter' : PROVIDER_LABELS[provider]} API key`}
             className="pr-9"
             autoComplete="off"
           />

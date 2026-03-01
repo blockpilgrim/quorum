@@ -55,14 +55,13 @@ describe('MODEL_OPTIONS', () => {
 
   it('contains the correct Gemini model IDs', () => {
     const ids = MODEL_OPTIONS.gemini.map((m) => m.id)
-    expect(ids).toContain('gemini-2.5-flash')
-    expect(ids).toContain('gemini-2.5-pro')
+    expect(ids).toContain('google/gemini-3.1-pro-preview')
   })
 
   it('has the default model first for each provider', () => {
     expect(MODEL_OPTIONS.claude[0].id).toBe('claude-sonnet-4-6')
     expect(MODEL_OPTIONS.chatgpt[0].id).toBe('gpt-5.2')
-    expect(MODEL_OPTIONS.gemini[0].id).toBe('gemini-2.5-flash')
+    expect(MODEL_OPTIONS.gemini[0].id).toBe('google/gemini-3.1-pro-preview')
   })
 
   it('does not contain deprecated model IDs', () => {
@@ -81,6 +80,8 @@ describe('MODEL_OPTIONS', () => {
       'gemini-2.5-pro-preview-06-05',
       'gemini-3-flash-preview',
       'gemini-3.1-pro-preview',
+      'gemini-2.5-flash',
+      'gemini-2.5-pro',
     ]
     for (const old of deprecated) {
       expect(allIds).not.toContain(old)
@@ -108,8 +109,7 @@ describe('getModelDisplayName', () => {
     expect(getModelDisplayName('claude-opus-4-6')).toBe('Opus 4.6')
     expect(getModelDisplayName('gpt-5.2')).toBe('GPT-5.2')
     expect(getModelDisplayName('gpt-5.3-codex')).toBe('GPT-5.3 Codex')
-    expect(getModelDisplayName('gemini-2.5-flash')).toBe('2.5 Flash')
-    expect(getModelDisplayName('gemini-2.5-pro')).toBe('2.5 Pro')
+    expect(getModelDisplayName('google/gemini-3.1-pro-preview')).toBe('3.1 Pro')
   })
 
   it('falls back to raw ID for deprecated model IDs', () => {
