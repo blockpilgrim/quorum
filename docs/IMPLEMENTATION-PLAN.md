@@ -251,7 +251,7 @@ Each phase produces a working, testable increment. Phases are sequential — lat
 
 ---
 
-- [ ] ## Phase 9: Conversation Management
+- [x] ## Phase 9: Conversation Management
 
 **Goal**: Full conversation lifecycle — create, switch, rename, delete.
 
