@@ -28,6 +28,35 @@ export const MODEL_OPTIONS: Record<Provider, ModelOption[]> = {
   gemini: [{ id: 'google/gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro' }],
 }
 
+/**
+ * Maps internal model IDs to OpenRouter-compatible model IDs.
+ *
+ * OpenRouter uses `vendor/model` format. Models that already use this format
+ * (e.g., Gemini) map to themselves. Direct API model IDs (Claude, OpenAI)
+ * need a vendor prefix.
+ */
+export const OPENROUTER_MODEL_MAP: Record<string, string> = {
+  // Claude
+  'claude-sonnet-4-6': 'anthropic/claude-sonnet-4-6',
+  'claude-opus-4-6': 'anthropic/claude-opus-4-6',
+
+  // OpenAI
+  'gpt-5.2': 'openai/gpt-5.2',
+  'gpt-5.3-codex': 'openai/gpt-5.3-codex',
+
+  // Gemini (already OpenRouter format)
+  'google/gemini-3.1-pro-preview': 'google/gemini-3.1-pro-preview',
+}
+
+/**
+ * Resolve a model ID to its OpenRouter equivalent.
+ * Returns the mapped ID if one exists, otherwise returns the original ID
+ * (assumes it may already be in OpenRouter format).
+ */
+export function toOpenRouterModelId(modelId: string): string {
+  return OPENROUTER_MODEL_MAP[modelId] ?? modelId
+}
+
 /** All supported providers, derived from MODEL_OPTIONS keys. */
 export const PROVIDERS: readonly Provider[] = Object.freeze(
   Object.keys(MODEL_OPTIONS) as Provider[],

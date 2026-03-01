@@ -252,42 +252,42 @@ function validateRequestBody(
 // ---------------------------------------------------------------------------
 
 /**
- * Creates a provider-specific language model instance using the AI SDK
- * provider adapters. Each call creates a fresh provider instance with
- * the user-supplied API key (BYOK pattern).
+ * Creates a language model instance routed through OpenRouter.
+ *
+ * All providers use OpenRouter by default — one API key gives access to
+ * Claude, ChatGPT, and Gemini. The model ID should already be in
+ * OpenRouter format (e.g., 'anthropic/claude-sonnet-4-6').
+ *
+ * Direct API adapters (@ai-sdk/anthropic, @ai-sdk/openai) are kept as
+ * imports for a future feature where users can choose between direct API
+ * and OpenRouter per provider.
  */
-function createModel(provider: Provider, model: string, apiKey: string) {
-  switch (provider) {
-    case 'claude': {
-      const anthropic = createAnthropic({ apiKey })
-      return anthropic(model)
-    }
-    case 'chatgpt': {
-      const openai = createOpenAI({ apiKey })
-      return openai(model)
-    }
-    case 'gemini': {
-      const openrouter = createOpenRouter({ apiKey })
-      return openrouter(model)
-    }
-  }
+function createModel(_provider: Provider, model: string, apiKey: string) {
+  const openrouter = createOpenRouter({ apiKey })
+  return openrouter(model)
 }
+
+// Keep direct API adapter imports referenced so tree-shaking doesn't remove them.
+// These will be used in a future feature for per-provider API routing choice.
+void createAnthropic
+void createOpenAI
 
 /**
  * Provider-specific options to enable thinking/reasoning for each provider.
  *
- * - Claude: adaptive thinking (model decides when and how deeply to think)
+ * All providers now route through OpenRouter, so all use the `openrouter` key.
+ * - Claude: adaptive thinking via OpenRouter's provider passthrough
  * - OpenAI: reasoning effort set to 'high'
- * - Gemini: OpenRouter reasoning with effort set to 'high'
+ * - Gemini: reasoning with effort set to 'high'
  */
 const PROVIDER_OPTIONS = {
   claude: {
-    anthropic: {
+    openrouter: {
       thinking: { type: 'adaptive' },
     },
   },
   chatgpt: {
-    openai: {
+    openrouter: {
       reasoningEffort: 'high',
     },
   },

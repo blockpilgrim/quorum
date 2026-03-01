@@ -49,7 +49,7 @@ function validBody(
 ): Record<string, unknown> {
   return {
     provider: 'claude',
-    model: 'claude-sonnet-4-6',
+    model: 'anthropic/claude-sonnet-4-6',
     messages: [{ role: 'user', content: 'Hello' }],
     apiKey: 'sk-test-key-123',
     ...overrides,
@@ -162,32 +162,38 @@ describe('request validation', () => {
   })
 })
 
-describe('provider routing', () => {
-  it('routes claude to Anthropic', async () => {
-    setupStreamTextSuccess()
-    const context = createMockContext(validBody({ provider: 'claude' }))
-    await onRequestPost(
-      context as unknown as Parameters<typeof onRequestPost>[0],
-    )
-    expect(mockCreateAnthropic).toHaveBeenCalledWith({
-      apiKey: 'sk-test-key-123',
-    })
-  })
-
-  it('routes chatgpt to OpenAI', async () => {
+describe('provider routing (all via OpenRouter)', () => {
+  it('routes claude through OpenRouter', async () => {
     setupStreamTextSuccess()
     const context = createMockContext(
-      validBody({ provider: 'chatgpt', model: 'gpt-5.2' }),
+      validBody({ provider: 'claude', model: 'anthropic/claude-sonnet-4-6' }),
     )
     await onRequestPost(
       context as unknown as Parameters<typeof onRequestPost>[0],
     )
-    expect(mockCreateOpenAI).toHaveBeenCalledWith({
+    expect(mockCreateOpenRouter).toHaveBeenCalledWith({
       apiKey: 'sk-test-key-123',
     })
+    expect(mockOpenRouterModel).toHaveBeenCalledWith(
+      'anthropic/claude-sonnet-4-6',
+    )
   })
 
-  it('routes gemini to OpenRouter', async () => {
+  it('routes chatgpt through OpenRouter', async () => {
+    setupStreamTextSuccess()
+    const context = createMockContext(
+      validBody({ provider: 'chatgpt', model: 'openai/gpt-5.2' }),
+    )
+    await onRequestPost(
+      context as unknown as Parameters<typeof onRequestPost>[0],
+    )
+    expect(mockCreateOpenRouter).toHaveBeenCalledWith({
+      apiKey: 'sk-test-key-123',
+    })
+    expect(mockOpenRouterModel).toHaveBeenCalledWith('openai/gpt-5.2')
+  })
+
+  it('routes gemini through OpenRouter', async () => {
     setupStreamTextSuccess()
     const context = createMockContext(
       validBody({ provider: 'gemini', model: 'google/gemini-3.1-pro-preview' }),
@@ -198,48 +204,15 @@ describe('provider routing', () => {
     expect(mockCreateOpenRouter).toHaveBeenCalledWith({
       apiKey: 'sk-test-key-123',
     })
-  })
-
-  it('passes model ID to the provider factory function', async () => {
-    setupStreamTextSuccess()
-    const context = createMockContext(
-      validBody({ provider: 'gemini', model: 'google/gemini-3.1-pro-preview' }),
-    )
-    await onRequestPost(
-      context as unknown as Parameters<typeof onRequestPost>[0],
-    )
-    // The factory returned by createOpenRouter should be called with the model ID
     expect(mockOpenRouterModel).toHaveBeenCalledWith(
       'google/gemini-3.1-pro-preview',
     )
   })
 
-  it('passes model ID to Anthropic factory for claude', async () => {
+  it('does not call Anthropic or OpenAI direct API factories', async () => {
     setupStreamTextSuccess()
     const context = createMockContext(
-      validBody({ provider: 'claude', model: 'claude-sonnet-4-6' }),
-    )
-    await onRequestPost(
-      context as unknown as Parameters<typeof onRequestPost>[0],
-    )
-    expect(mockAnthropicModel).toHaveBeenCalledWith('claude-sonnet-4-6')
-  })
-
-  it('passes model ID to OpenAI factory for chatgpt', async () => {
-    setupStreamTextSuccess()
-    const context = createMockContext(
-      validBody({ provider: 'chatgpt', model: 'gpt-5.2' }),
-    )
-    await onRequestPost(
-      context as unknown as Parameters<typeof onRequestPost>[0],
-    )
-    expect(mockOpenAIModel).toHaveBeenCalledWith('gpt-5.2')
-  })
-
-  it('does not call Anthropic or OpenAI factories for gemini requests', async () => {
-    setupStreamTextSuccess()
-    const context = createMockContext(
-      validBody({ provider: 'gemini', model: 'google/gemini-3.1-pro-preview' }),
+      validBody({ provider: 'claude', model: 'anthropic/claude-sonnet-4-6' }),
     )
     await onRequestPost(
       context as unknown as Parameters<typeof onRequestPost>[0],
@@ -388,18 +361,21 @@ describe('providerOptions (thinking/reasoning)', () => {
     return mockStreamText.mock.calls[0][0] as StreamTextArgs
   }
 
-  it('passes anthropic adaptive thinking for claude provider', async () => {
-    const args = await captureStreamTextArgs('claude', 'claude-sonnet-4-6')
+  it('passes openrouter thinking config for claude provider', async () => {
+    const args = await captureStreamTextArgs(
+      'claude',
+      'anthropic/claude-sonnet-4-6',
+    )
     expect(args.providerOptions).toBeDefined()
-    expect(args.providerOptions!.anthropic).toEqual({
+    expect(args.providerOptions!.openrouter).toEqual({
       thinking: { type: 'adaptive' },
     })
   })
 
-  it('passes openai reasoning effort for chatgpt provider', async () => {
-    const args = await captureStreamTextArgs('chatgpt', 'gpt-5.2')
+  it('passes openrouter reasoning effort for chatgpt provider', async () => {
+    const args = await captureStreamTextArgs('chatgpt', 'openai/gpt-5.2')
     expect(args.providerOptions).toBeDefined()
-    expect(args.providerOptions!.openai).toEqual({
+    expect(args.providerOptions!.openrouter).toEqual({
       reasoningEffort: 'high',
     })
   })
@@ -415,10 +391,10 @@ describe('providerOptions (thinking/reasoning)', () => {
     })
   })
 
-  it('always includes providerOptions for every supported provider', async () => {
+  it('all providers use the openrouter key in providerOptions', async () => {
     for (const [provider, model] of [
-      ['claude', 'claude-sonnet-4-6'],
-      ['chatgpt', 'gpt-5.2'],
+      ['claude', 'anthropic/claude-sonnet-4-6'],
+      ['chatgpt', 'openai/gpt-5.2'],
       ['gemini', 'google/gemini-3.1-pro-preview'],
     ] as const) {
       vi.clearAllMocks()
@@ -430,6 +406,10 @@ describe('providerOptions (thinking/reasoning)', () => {
       expect(
         args.providerOptions,
         `providerOptions missing for ${provider}`,
+      ).toBeDefined()
+      expect(
+        args.providerOptions!.openrouter,
+        `openrouter key missing in providerOptions for ${provider}`,
       ).toBeDefined()
     }
   })

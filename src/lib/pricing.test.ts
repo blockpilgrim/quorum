@@ -100,8 +100,24 @@ describe('MODEL_PRICING', () => {
     })
   })
 
-  it('contains exactly 5 models (no extras)', () => {
-    expect(Object.keys(MODEL_PRICING).length).toBe(5)
+  it('contains pricing entries for both direct and OpenRouter model IDs', () => {
+    // 5 direct API IDs + 4 OpenRouter aliases (Gemini is same in both)
+    expect(Object.keys(MODEL_PRICING).length).toBe(9)
+  })
+
+  it('has matching pricing between direct and OpenRouter model IDs', () => {
+    expect(MODEL_PRICING['claude-sonnet-4-6']).toEqual(
+      MODEL_PRICING['anthropic/claude-sonnet-4-6'],
+    )
+    expect(MODEL_PRICING['claude-opus-4-6']).toEqual(
+      MODEL_PRICING['anthropic/claude-opus-4-6'],
+    )
+    expect(MODEL_PRICING['gpt-5.2']).toEqual(
+      MODEL_PRICING['openai/gpt-5.2'],
+    )
+    expect(MODEL_PRICING['gpt-5.3-codex']).toEqual(
+      MODEL_PRICING['openai/gpt-5.3-codex'],
+    )
   })
 })
 

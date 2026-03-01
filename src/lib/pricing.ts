@@ -24,15 +24,21 @@ export interface ModelPricing {
  * Last updated: 2026-03-01.
  */
 export const MODEL_PRICING: Record<string, ModelPricing> = {
-  // Claude
+  // Claude (direct API IDs)
   'claude-sonnet-4-6': { inputPer1M: 3, outputPer1M: 15 },
   'claude-opus-4-6': { inputPer1M: 5, outputPer1M: 25 },
+  // Claude (OpenRouter IDs)
+  'anthropic/claude-sonnet-4-6': { inputPer1M: 3, outputPer1M: 15 },
+  'anthropic/claude-opus-4-6': { inputPer1M: 5, outputPer1M: 25 },
 
-  // OpenAI
+  // OpenAI (direct API IDs)
   'gpt-5.2': { inputPer1M: 1.75, outputPer1M: 14 },
   'gpt-5.3-codex': { inputPer1M: 1.75, outputPer1M: 14 },
+  // OpenAI (OpenRouter IDs)
+  'openai/gpt-5.2': { inputPer1M: 1.75, outputPer1M: 14 },
+  'openai/gpt-5.3-codex': { inputPer1M: 1.75, outputPer1M: 14 },
 
-  // Gemini (via OpenRouter)
+  // Gemini (same ID in both direct and OpenRouter)
   'google/gemini-3.1-pro-preview': { inputPer1M: 1.25, outputPer1M: 10 },
 }
 

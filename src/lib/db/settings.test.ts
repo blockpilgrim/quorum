@@ -24,6 +24,7 @@ describe('settings', () => {
       claude: '',
       chatgpt: '',
       gemini: '',
+      openrouter: '',
     })
     expect(settings.theme).toBe('dark')
   })

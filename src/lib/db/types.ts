@@ -118,6 +118,8 @@ export interface ApiKeys {
   claude: string
   chatgpt: string
   gemini: string
+  /** OpenRouter API key — used as default for all providers. */
+  openrouter: string
 }
 
 /** Per-provider selected model IDs. */

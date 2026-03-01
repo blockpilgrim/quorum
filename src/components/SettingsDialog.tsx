@@ -1,9 +1,8 @@
 /**
  * Settings dialog for API key management and model selection.
  *
- * Three provider sections (Claude, ChatGPT, Gemini), each with:
- * - A masked API key input with show/hide toggle
- * - A model selector dropdown
+ * A single OpenRouter API key field gives access to all three providers
+ * (Claude, ChatGPT, Gemini). Each provider has a model selector dropdown.
  *
  * Changes save immediately to Dexie (persistence) and Zustand (runtime).
  * Dialog state is managed locally -- no need for global state.
@@ -46,12 +45,9 @@ export function SettingsDialog() {
   // Reactive settings from Dexie
   const settings = useLiveQuery(() => db.settings.get(1), [])
 
-  // Check if this is first run (no API keys configured)
-  const hasAnyKey =
-    settings != null &&
-    (settings.apiKeys.claude !== '' ||
-      settings.apiKeys.chatgpt !== '' ||
-      settings.apiKeys.gemini !== '')
+  // Check if this is first run (no OpenRouter API key configured)
+  const hasApiKey =
+    settings != null && settings.apiKeys.openrouter !== ''
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -62,7 +58,7 @@ export function SettingsDialog() {
           aria-label="Settings"
           className={cn(
             'h-10 w-10 sm:h-8 sm:w-8',
-            !hasAnyKey && 'text-chart-1 animate-pulse',
+            !hasApiKey && 'text-chart-1 animate-pulse',
           )}
         >
           <SettingsIcon className="h-4 w-4" />
@@ -72,39 +68,57 @@ export function SettingsDialog() {
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
           <DialogDescription>
-            Configure API keys and model preferences for each provider.
+            One API key for all providers. Get yours at{' '}
+            <a
+              href="https://openrouter.ai/keys"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline"
+            >
+              openrouter.ai/keys
+            </a>
+            .
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-6 pt-2">
-          {PROVIDERS.map((provider) => (
-            <ProviderSection
-              key={provider}
-              provider={provider}
-              apiKey={settings?.apiKeys[provider] ?? ''}
-              selectedModel={settings?.selectedModels[provider] ?? ''}
-            />
-          ))}
+          {/* OpenRouter API key (single key for all providers) */}
+          <OpenRouterKeySection
+            apiKey={settings?.apiKeys.openrouter ?? ''}
+          />
+
+          {/* Separator */}
+          <div className="border-border border-t" />
+
+          {/* Per-provider model selectors */}
+          <div className="flex flex-col gap-4">
+            <span className="text-foreground text-sm font-medium">
+              Models
+            </span>
+            {PROVIDERS.map((provider) => (
+              <ProviderModelSection
+                key={provider}
+                provider={provider}
+                selectedModel={settings?.selectedModels[provider] ?? ''}
+              />
+            ))}
+          </div>
         </div>
       </DialogContent>
     </Dialog>
   )
 }
 
-interface ProviderSectionProps {
-  provider: Provider
+// ---------------------------------------------------------------------------
+// OpenRouter API Key Section
+// ---------------------------------------------------------------------------
+
+interface OpenRouterKeySectionProps {
   apiKey: string
-  selectedModel: string
 }
 
-function ProviderSection({
-  provider,
-  apiKey,
-  selectedModel,
-}: ProviderSectionProps) {
+function OpenRouterKeySection({ apiKey }: OpenRouterKeySectionProps) {
   const [showKey, setShowKey] = useState(false)
-  const setSelectedModel = useAppStore((s) => s.setSelectedModel)
-  const models = MODEL_OPTIONS[provider]
 
   // Local state for the API key input (instant visual feedback).
   // Debounce the Dexie write to avoid a transaction per keystroke.
@@ -120,7 +134,7 @@ function ProviderSection({
     setLocalKey(value)
     if (debounceRef.current) clearTimeout(debounceRef.current)
     debounceRef.current = setTimeout(() => {
-      updateSettings({ apiKeys: { [provider]: value } })
+      updateSettings({ apiKeys: { openrouter: value } })
     }, 300)
   }
 
@@ -131,6 +145,59 @@ function ProviderSection({
     }
   }, [])
 
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label
+        htmlFor="openrouter-api-key"
+        className="text-foreground text-sm font-medium"
+      >
+        OpenRouter API Key
+      </label>
+      <div className="relative">
+        <Input
+          id="openrouter-api-key"
+          type={showKey ? 'text' : 'password'}
+          value={localKey}
+          onChange={(e) => handleApiKeyChange(e.target.value)}
+          placeholder="sk-or-..."
+          className="pr-9"
+          autoComplete="off"
+        />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="absolute top-0 right-0 h-9 w-9"
+          onClick={() => setShowKey(!showKey)}
+          aria-label={showKey ? 'Hide API key' : 'Show API key'}
+        >
+          {showKey ? (
+            <EyeOffIcon className="h-4 w-4" />
+          ) : (
+            <EyeIcon className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Per-Provider Model Section
+// ---------------------------------------------------------------------------
+
+interface ProviderModelSectionProps {
+  provider: Provider
+  selectedModel: string
+}
+
+function ProviderModelSection({
+  provider,
+  selectedModel,
+}: ProviderModelSectionProps) {
+  const setSelectedModel = useAppStore((s) => s.setSelectedModel)
+  const models = MODEL_OPTIONS[provider]
+
   const handleModelChange = async (modelId: string) => {
     // Update both Dexie (persistence) and Zustand (immediate runtime effect)
     await updateSettings({ selectedModels: { [provider]: modelId } })
@@ -138,73 +205,30 @@ function ProviderSection({
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      {/* Provider header */}
-      <div className="flex items-center gap-2">
+    <div className="flex items-center gap-3">
+      {/* Provider label with dot */}
+      <div className="flex w-20 shrink-0 items-center gap-2">
         <div
           className={cn('h-2 w-2 rounded-full', PROVIDER_COLORS[provider])}
         />
-        <span className="text-foreground text-sm font-medium">
+        <span className="text-muted-foreground text-xs">
           {PROVIDER_LABELS[provider]}
         </span>
       </div>
 
-      {/* API key input */}
-      <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor={`${provider}-api-key`}
-          className="text-muted-foreground text-xs"
-        >
-          API Key
-        </label>
-        <div className="relative">
-          <Input
-            id={`${provider}-api-key`}
-            type={showKey ? 'text' : 'password'}
-            value={localKey}
-            onChange={(e) => handleApiKeyChange(e.target.value)}
-            placeholder={`Enter your ${provider === 'gemini' ? 'OpenRouter' : PROVIDER_LABELS[provider]} API key`}
-            className="pr-9"
-            autoComplete="off"
-          />
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="absolute top-0 right-0 h-9 w-9"
-            onClick={() => setShowKey(!showKey)}
-            aria-label={showKey ? 'Hide API key' : 'Show API key'}
-          >
-            {showKey ? (
-              <EyeOffIcon className="h-4 w-4" />
-            ) : (
-              <EyeIcon className="h-4 w-4" />
-            )}
-          </Button>
-        </div>
-      </div>
-
       {/* Model selector */}
-      <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor={`${provider}-model`}
-          className="text-muted-foreground text-xs"
-        >
-          Model
-        </label>
-        <Select value={selectedModel} onValueChange={handleModelChange}>
-          <SelectTrigger id={`${provider}-model`} className="w-full">
-            <SelectValue placeholder="Select a model" />
-          </SelectTrigger>
-          <SelectContent>
-            {models.map((model) => (
-              <SelectItem key={model.id} value={model.id}>
-                {model.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      <Select value={selectedModel} onValueChange={handleModelChange}>
+        <SelectTrigger id={`${provider}-model`} className="flex-1">
+          <SelectValue placeholder="Select a model" />
+        </SelectTrigger>
+        <SelectContent>
+          {models.map((model) => (
+            <SelectItem key={model.id} value={model.id}>
+              {model.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   )
 }

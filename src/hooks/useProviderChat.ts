@@ -14,6 +14,7 @@ import { DefaultChatTransport } from 'ai'
 import type { UIMessage } from 'ai'
 import { addMessage, getMessagesByThread, getSettings } from '@/lib/db'
 import type { Provider, TokenCount } from '@/lib/db/types'
+import { toOpenRouterModelId } from '@/lib/models'
 import { useAppStore } from '@/lib/store'
 
 interface UseProviderChatOptions {
@@ -141,13 +142,18 @@ export function useProviderChat({
         api: '/api/chat',
         prepareSendMessagesRequest: async ({ messages: chatMessages }) => {
           const settings = await getSettings()
-          const apiKey = settings.apiKeys[providerRef.current]
+
+          // Use the OpenRouter API key (unified key for all providers)
+          const apiKey = settings.apiKeys.openrouter
 
           if (!apiKey) {
             throw new Error(
-              `No API key configured for ${providerRef.current}. Please add your key in settings.`,
+              'No OpenRouter API key configured. Please add your key in settings.',
             )
           }
+
+          // Map the model ID to OpenRouter format (e.g., 'claude-sonnet-4-6' -> 'anthropic/claude-sonnet-4-6')
+          const openRouterModel = toOpenRouterModelId(modelRef.current)
 
           // Convert UIMessages to the simple {role, content} format the proxy expects
           const simpleMessages = chatMessages.map((msg) => ({
@@ -158,7 +164,7 @@ export function useProviderChat({
           return {
             body: {
               provider: providerRef.current,
-              model: modelRef.current,
+              model: openRouterModel,
               messages: simpleMessages,
               apiKey,
             },

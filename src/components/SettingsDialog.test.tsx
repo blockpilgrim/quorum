@@ -2,8 +2,8 @@
  * Component tests for SettingsDialog.
  *
  * Uses fake-indexeddb for Dexie's useLiveQuery. Tests the dialog trigger,
- * API key inputs with show/hide toggle, model selectors, and the
- * first-run pulse animation on the gear icon.
+ * the unified OpenRouter API key input with show/hide toggle, model selectors,
+ * and the first-run pulse animation on the gear icon.
  */
 
 import 'fake-indexeddb/auto'
@@ -45,7 +45,7 @@ describe('SettingsDialog', () => {
       ).toBeInTheDocument()
     })
 
-    it('pulses when no API keys are configured', async () => {
+    it('pulses when no OpenRouter API key is configured', async () => {
       render(<SettingsDialog />)
 
       // Wait for useLiveQuery to resolve (settings get auto-initialized with empty keys)
@@ -55,8 +55,8 @@ describe('SettingsDialog', () => {
       })
     })
 
-    it('does not pulse when at least one API key is configured', async () => {
-      await updateSettings({ apiKeys: { claude: 'sk-ant-test-key' } })
+    it('does not pulse when OpenRouter API key is configured', async () => {
+      await updateSettings({ apiKeys: { openrouter: 'sk-or-test-key' } })
 
       render(<SettingsDialog />)
 
@@ -85,13 +85,28 @@ describe('SettingsDialog', () => {
 
       expect(screen.getByText('Settings')).toBeInTheDocument()
       expect(
-        screen.getByText(
-          'Configure API keys and model preferences for each provider.',
-        ),
+        screen.getByText(/One API key for all providers/),
       ).toBeInTheDocument()
     })
 
-    it('shows all three provider sections', async () => {
+    it('shows a link to openrouter.ai/keys', async () => {
+      await openDialog()
+
+      const link = screen.getByRole('link', { name: 'openrouter.ai/keys' })
+      expect(link).toHaveAttribute('href', 'https://openrouter.ai/keys')
+      expect(link).toHaveAttribute('target', '_blank')
+    })
+
+    it('shows a single OpenRouter API key input', async () => {
+      await openDialog()
+
+      expect(screen.getByText('OpenRouter API Key')).toBeInTheDocument()
+      const input = screen.getByLabelText('OpenRouter API Key')
+      expect(input).toBeInTheDocument()
+      expect(input).toHaveAttribute('type', 'password')
+    })
+
+    it('shows all three provider names in the Models section', async () => {
       await openDialog()
 
       expect(screen.getByText('Claude')).toBeInTheDocument()
@@ -99,60 +114,24 @@ describe('SettingsDialog', () => {
       expect(screen.getByText('Gemini')).toBeInTheDocument()
     })
 
-    it('shows API Key labels and inputs for each provider', async () => {
+    it('shows Models section header', async () => {
       await openDialog()
 
-      // Each provider should have an API key input
-      const apiKeyInputs = screen.getAllByLabelText('API Key')
-      expect(apiKeyInputs.length).toBe(3)
+      expect(screen.getByText('Models')).toBeInTheDocument()
     })
 
-    it('shows Model labels for each provider', async () => {
+    it('API key input defaults to password type (masked)', async () => {
       await openDialog()
 
-      const modelLabels = screen.getAllByText('Model')
-      expect(modelLabels.length).toBe(3)
+      const input = screen.getByLabelText('OpenRouter API Key')
+      expect(input).toHaveAttribute('type', 'password')
     })
 
-    it('API key inputs default to password type (masked)', async () => {
+    it('shows placeholder text for the OpenRouter API key input', async () => {
       await openDialog()
 
-      const claudeInput = screen.getByLabelText('API Key', {
-        selector: '#claude-api-key',
-      })
-      expect(claudeInput).toHaveAttribute('type', 'password')
-    })
-
-    it('shows provider-specific placeholder text for API key inputs', async () => {
-      await openDialog()
-
-      const claudeInput = screen.getByPlaceholderText(
-        'Enter your Claude API key',
-      )
-      const chatgptInput = screen.getByPlaceholderText(
-        'Enter your ChatGPT API key',
-      )
-      const geminiInput = screen.getByPlaceholderText(
-        'Enter your OpenRouter API key',
-      )
-
-      expect(claudeInput).toBeInTheDocument()
-      expect(chatgptInput).toBeInTheDocument()
-      expect(geminiInput).toBeInTheDocument()
-    })
-
-    it('shows OpenRouter (not Gemini) in the Gemini API key placeholder', async () => {
-      await openDialog()
-
-      // The Gemini provider should reference OpenRouter since Gemini is
-      // routed through OpenRouter's API
-      const geminiInput = screen.getByLabelText('API Key', {
-        selector: '#gemini-api-key',
-      })
-      expect(geminiInput).toHaveAttribute(
-        'placeholder',
-        'Enter your OpenRouter API key',
-      )
+      const input = screen.getByPlaceholderText('sk-or-...')
+      expect(input).toBeInTheDocument()
     })
   })
 
@@ -166,19 +145,17 @@ describe('SettingsDialog', () => {
         expect(screen.getByText('Settings')).toBeInTheDocument()
       })
 
-      const claudeInput = screen.getByLabelText('API Key', {
-        selector: '#claude-api-key',
-      })
-      expect(claudeInput).toHaveAttribute('type', 'password')
+      const input = screen.getByLabelText('OpenRouter API Key')
+      expect(input).toHaveAttribute('type', 'password')
 
-      // Click "Show API key" button (first one is for Claude)
-      const showButtons = screen.getAllByRole('button', {
+      // Click "Show API key" button
+      const showButton = screen.getByRole('button', {
         name: 'Show API key',
       })
-      await user.click(showButtons[0])
+      await user.click(showButton)
 
       // Input should now be text type
-      expect(claudeInput).toHaveAttribute('type', 'text')
+      expect(input).toHaveAttribute('type', 'text')
     })
 
     it('toggles API key visibility from text back to password', async () => {
@@ -191,24 +168,22 @@ describe('SettingsDialog', () => {
       })
 
       // Show the key
-      const showButtons = screen.getAllByRole('button', {
+      const showButton = screen.getByRole('button', {
         name: 'Show API key',
       })
-      await user.click(showButtons[0])
+      await user.click(showButton)
 
       // Now hide it again
       const hideButton = screen.getByRole('button', { name: 'Hide API key' })
       await user.click(hideButton)
 
-      const claudeInput = screen.getByLabelText('API Key', {
-        selector: '#claude-api-key',
-      })
-      expect(claudeInput).toHaveAttribute('type', 'password')
+      const input = screen.getByLabelText('OpenRouter API Key')
+      expect(input).toHaveAttribute('type', 'password')
     })
   })
 
   describe('API key persistence', () => {
-    it('saves API key to Dexie when changed', async () => {
+    it('saves OpenRouter API key to Dexie when changed', async () => {
       const user = userEvent.setup()
       render(<SettingsDialog />)
       await user.click(screen.getByRole('button', { name: 'Settings' }))
@@ -217,47 +192,18 @@ describe('SettingsDialog', () => {
         expect(screen.getByText('Settings')).toBeInTheDocument()
       })
 
-      const claudeInput = screen.getByLabelText('API Key', {
-        selector: '#claude-api-key',
-      })
+      const input = screen.getByLabelText('OpenRouter API Key')
 
       // Use fireEvent.change to set the value directly (avoids userEvent
       // interpreting hyphens as keyboard shortcut modifiers)
-      fireEvent.change(claudeInput, {
-        target: { value: 'sk-ant-test-123' },
+      fireEvent.change(input, {
+        target: { value: 'sk-or-test-123' },
       })
 
       // Verify it persisted to Dexie
       await waitFor(async () => {
         const settings = await db.settings.get(1)
-        expect(settings?.apiKeys.claude).toBe('sk-ant-test-123')
-      })
-    })
-
-    it('preserves other provider keys when updating one', async () => {
-      // Pre-configure a ChatGPT key
-      await updateSettings({ apiKeys: { chatgpt: 'sk-openai-existing' } })
-
-      const user = userEvent.setup()
-      render(<SettingsDialog />)
-      await user.click(screen.getByRole('button', { name: 'Settings' }))
-
-      await waitFor(() => {
-        expect(screen.getByText('Settings')).toBeInTheDocument()
-      })
-
-      const claudeInput = screen.getByLabelText('API Key', {
-        selector: '#claude-api-key',
-      })
-      fireEvent.change(claudeInput, {
-        target: { value: 'sk-ant-new' },
-      })
-
-      // The ChatGPT key should still be there
-      await waitFor(async () => {
-        const settings = await db.settings.get(1)
-        expect(settings?.apiKeys.chatgpt).toBe('sk-openai-existing')
-        expect(settings?.apiKeys.claude).toBe('sk-ant-new')
+        expect(settings?.apiKeys.openrouter).toBe('sk-or-test-123')
       })
     })
   })
@@ -335,10 +281,10 @@ describe('SettingsDialog', () => {
   })
 
   describe('first-run detection', () => {
-    it('shows pulse when all API keys are empty strings', async () => {
-      // Initialize settings with empty keys (simulating first run)
+    it('shows pulse when OpenRouter API key is empty', async () => {
+      // Initialize settings with empty openrouter key (simulating first run)
       await updateSettings({
-        apiKeys: { claude: '', chatgpt: '', gemini: '' },
+        apiKeys: { openrouter: '' },
       })
 
       render(<SettingsDialog />)
@@ -349,7 +295,7 @@ describe('SettingsDialog', () => {
       })
     })
 
-    it('stops pulsing when any single key is set', async () => {
+    it('stops pulsing when OpenRouter key is set', async () => {
       // Start with no keys
       render(<SettingsDialog />)
 
@@ -359,7 +305,7 @@ describe('SettingsDialog', () => {
       })
 
       // Add a key
-      await updateSettings({ apiKeys: { gemini: 'AIza-test-key' } })
+      await updateSettings({ apiKeys: { openrouter: 'sk-or-test-key' } })
 
       // useLiveQuery should re-render and remove the pulse
       await waitFor(() => {

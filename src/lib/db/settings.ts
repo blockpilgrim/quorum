@@ -16,6 +16,7 @@ const DEFAULT_SETTINGS: Settings = {
     claude: '',
     chatgpt: '',
     gemini: '',
+    openrouter: '',
   },
   selectedModels: { ...DEFAULT_MODELS },
   theme: 'dark',
