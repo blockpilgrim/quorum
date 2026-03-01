@@ -13,13 +13,15 @@
  * On first message, auto-creates a conversation in Dexie.
  */
 
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { TopBar } from '@/components/TopBar'
 import { ConversationSidebar } from '@/components/ConversationSidebar'
+import { ConversationSearch } from '@/components/ConversationSearch'
 import { ModelColumn } from '@/components/ModelColumn'
 import type { ModelColumnHandle } from '@/components/ModelColumn'
 import { InputBar } from '@/components/InputBar'
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useAppStore } from '@/lib/store'
 import {
   createConversation,
@@ -43,6 +45,9 @@ function App() {
   const streamingStatus = useAppStore((s) => s.streamingStatus)
 
   const setSelectedModels = useAppStore((s) => s.setSelectedModels)
+
+  // Conversation search dialog state (Cmd/Ctrl+K)
+  const [searchOpen, setSearchOpen] = useState(false)
 
   // On mount, load persisted settings from Dexie and sync to Zustand.
   // This ensures the store starts with persisted model selections, not just defaults.
@@ -88,6 +93,16 @@ function App() {
   const handleNewConversation = useCallback(() => {
     setActiveConversationId(null)
   }, [setActiveConversationId])
+
+  const handleSearchOpen = useCallback(() => {
+    setSearchOpen(true)
+  }, [])
+
+  // Register global keyboard shortcuts
+  useKeyboardShortcuts({
+    onNewConversation: handleNewConversation,
+    onSearchOpen: handleSearchOpen,
+  })
 
   // Track whether cross-feed is available: all three providers must have
   // at least one assistant message in the active conversation.
@@ -230,7 +245,11 @@ function App() {
           {/* Model columns: 3-column grid on desktop, stacked on mobile */}
           <div className="flex min-h-0 flex-1 flex-col md:flex-row">
             <ModelColumn ref={claudeRef} provider="claude" label="Claude" />
-            <ModelColumn ref={chatgptRef} provider="chatgpt" label="ChatGPT" />
+            <ModelColumn
+              ref={chatgptRef}
+              provider="chatgpt"
+              label="ChatGPT"
+            />
             <ModelColumn ref={geminiRef} provider="gemini" label="Gemini" />
           </div>
 
@@ -242,6 +261,9 @@ function App() {
           />
         </main>
       </div>
+
+      {/* Conversation search dialog (Cmd/Ctrl+K) */}
+      <ConversationSearch open={searchOpen} onOpenChange={setSearchOpen} />
     </div>
   )
 }

@@ -4,14 +4,16 @@
  * Accepts an `onSend` callback from the parent to dispatch user messages
  * to all provider columns. Disabled when no API keys are configured or
  * while any provider is streaming.
+ *
+ * Supports Shift+Enter for newline and Enter to send.
  */
 
 import { ArrowLeftRightIcon, SendIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { db } from '@/lib/db'
+import { cn } from '@/lib/utils'
 
 interface InputBarProps {
   /** Called when the user submits a message. */
@@ -31,7 +33,7 @@ export function InputBar({
   hasCrossFeedContent = false,
 }: InputBarProps) {
   const [value, setValue] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Check if any API keys are configured
   const settings = useLiveQuery(() => db.settings.get(1), [])
@@ -46,8 +48,16 @@ export function InputBar({
 
   // Auto-focus on mount
   useEffect(() => {
-    inputRef.current?.focus()
+    textareaRef.current?.focus()
   }, [])
+
+  // Auto-resize textarea to fit content (up to max height)
+  useEffect(() => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+    textarea.style.height = 'auto'
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 150)}px`
+  }, [value])
 
   const handleSend = useCallback(() => {
     const trimmed = value.trim()
@@ -55,11 +65,11 @@ export function InputBar({
 
     onSend(trimmed)
     setValue('')
-    inputRef.current?.focus()
+    textareaRef.current?.focus()
   }, [value, isDisabled, onSend])
 
   const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault()
         handleSend()
@@ -70,9 +80,9 @@ export function InputBar({
 
   return (
     <div className="border-border bg-background shrink-0 border-t px-4 py-3">
-      <div className="flex gap-2">
-        <Input
-          ref={inputRef}
+      <div className="flex items-end gap-2">
+        <textarea
+          ref={textareaRef}
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -84,7 +94,11 @@ export function InputBar({
                 : 'Ask all three models...'
           }
           disabled={isDisabled}
-          className="flex-1"
+          rows={1}
+          aria-label="Message input"
+          className={cn(
+            'border-input bg-transparent placeholder:text-muted-foreground focus-visible:ring-ring flex-1 resize-none rounded-md border px-3 py-2 text-sm shadow-sm transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50',
+          )}
         />
         <Button
           onClick={() => onCrossFeed?.()}
@@ -93,6 +107,7 @@ export function InputBar({
           variant="outline"
           aria-label="Cross-feed responses between models"
           title="Cross-feed: share each model's response with the others"
+          className="h-9 w-9 shrink-0"
         >
           <ArrowLeftRightIcon className="h-4 w-4" />
         </Button>
@@ -101,6 +116,7 @@ export function InputBar({
           disabled={isDisabled || value.trim() === ''}
           size="icon"
           aria-label="Send message"
+          className="h-9 w-9 shrink-0"
         >
           <SendIcon className="h-4 w-4" />
         </Button>

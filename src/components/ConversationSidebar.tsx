@@ -39,6 +39,7 @@ import {
 import { db, deleteConversation, updateConversation } from '@/lib/db'
 import type { Conversation } from '@/lib/db/types'
 import { useAppStore } from '@/lib/store'
+import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
 interface ConversationSidebarProps {
@@ -168,9 +169,7 @@ function SidebarContent({
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-0.5 p-2">
           {conversations === undefined ? (
-            <div className="text-muted-foreground px-2 py-4 text-center text-sm">
-              Loading...
-            </div>
+            <ConversationListSkeleton />
           ) : conversations.length === 0 ? (
             <div className="text-muted-foreground px-2 py-4 text-center text-sm">
               No conversations yet
@@ -386,5 +385,20 @@ function ConversationItem({
         </AlertDialogContent>
       </AlertDialog>
     </>
+  )
+}
+
+/** Skeleton placeholder shown while conversations are loading from Dexie. */
+function ConversationListSkeleton() {
+  return (
+    <div className="flex flex-col gap-1 px-2" role="status" aria-label="Loading conversations">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <div key={i} className="flex items-center gap-2 rounded-md px-2 py-1.5">
+          <Skeleton className="h-4 w-4 shrink-0 rounded" />
+          <Skeleton className="h-4 flex-1" />
+        </div>
+      ))}
+      <span className="sr-only">Loading conversations...</span>
+    </div>
   )
 }
