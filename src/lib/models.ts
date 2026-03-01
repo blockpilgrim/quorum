@@ -9,7 +9,7 @@
 import type { Provider } from '@/lib/db/types'
 
 export interface ModelOption {
-  /** Model ID sent to the proxy (e.g., 'claude-sonnet-4-20250514'). */
+  /** Model ID sent to the proxy (e.g., 'claude-sonnet-4-6'). */
   id: string
   /** Human-readable label for the UI (e.g., 'Sonnet 4'). */
   label: string
@@ -18,19 +18,16 @@ export interface ModelOption {
 /** Available models per provider, ordered by preference (default first). */
 export const MODEL_OPTIONS: Record<Provider, ModelOption[]> = {
   claude: [
-    { id: 'claude-sonnet-4-20250514', label: 'Sonnet 4' },
-    { id: 'claude-opus-4-20250514', label: 'Opus 4' },
-    { id: 'claude-haiku-3-5-20241022', label: 'Haiku 3.5' },
+    { id: 'claude-sonnet-4-6', label: 'Sonnet 4.6' },
+    { id: 'claude-opus-4-6', label: 'Opus 4.6' },
   ],
   chatgpt: [
-    { id: 'gpt-4o', label: 'GPT-4o' },
-    { id: 'gpt-4o-mini', label: 'GPT-4o Mini' },
-    { id: 'o1', label: 'o1' },
-    { id: 'o3-mini', label: 'o3-mini' },
+    { id: 'gpt-5.2', label: 'GPT-5.2' },
+    { id: 'gpt-5.3-codex', label: 'GPT-5.3 Codex' },
   ],
   gemini: [
-    { id: 'gemini-2.0-flash', label: '2.0 Flash' },
-    { id: 'gemini-2.5-pro-preview-06-05', label: '2.5 Pro' },
+    { id: 'gemini-3-flash-preview', label: '3 Flash' },
+    { id: 'gemini-3.1-pro-preview', label: '3.1 Pro' },
   ],
 }
 

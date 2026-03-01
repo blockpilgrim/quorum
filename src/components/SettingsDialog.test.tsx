@@ -30,9 +30,9 @@ beforeEach(async () => {
     activeConversationId: null,
     sidebarOpen: false,
     selectedModels: {
-      claude: 'claude-sonnet-4-20250514',
-      chatgpt: 'gpt-4o',
-      gemini: 'gemini-2.0-flash',
+      claude: 'claude-sonnet-4-6',
+      chatgpt: 'gpt-5.2',
+      gemini: 'gemini-3-flash-preview',
     },
     streamingStatus: { claude: false, chatgpt: false, gemini: false },
   })
@@ -243,7 +243,7 @@ describe('SettingsDialog', () => {
     it('updates Zustand store when model is changed', async () => {
       // Initialize settings so useLiveQuery has data
       await updateSettings({
-        selectedModels: { claude: 'claude-sonnet-4-20250514' },
+        selectedModels: { claude: 'claude-sonnet-4-6' },
       })
 
       const user = userEvent.setup()
@@ -265,21 +265,21 @@ describe('SettingsDialog', () => {
 
       // Wait for dropdown to appear and select a different model
       await waitFor(() => {
-        expect(screen.getByText('Opus 4')).toBeInTheDocument()
+        expect(screen.getByText('Opus 4.6')).toBeInTheDocument()
       })
 
-      fireEvent.click(screen.getByText('Opus 4'))
+      fireEvent.click(screen.getByText('Opus 4.6'))
 
       // Verify Zustand store was updated
       await waitFor(() => {
         const { selectedModels } = useAppStore.getState()
-        expect(selectedModels.claude).toBe('claude-opus-4-20250514')
+        expect(selectedModels.claude).toBe('claude-opus-4-6')
       })
     })
 
     it('persists model change to Dexie', async () => {
       await updateSettings({
-        selectedModels: { claude: 'claude-sonnet-4-20250514' },
+        selectedModels: { claude: 'claude-sonnet-4-6' },
       })
 
       const user = userEvent.setup()
@@ -298,15 +298,15 @@ describe('SettingsDialog', () => {
       fireEvent.click(claudeModelTrigger)
 
       await waitFor(() => {
-        expect(screen.getByText('Opus 4')).toBeInTheDocument()
+        expect(screen.getByText('Opus 4.6')).toBeInTheDocument()
       })
 
-      fireEvent.click(screen.getByText('Opus 4'))
+      fireEvent.click(screen.getByText('Opus 4.6'))
 
       // Verify Dexie was updated
       await waitFor(async () => {
         const settings = await db.settings.get(1)
-        expect(settings?.selectedModels.claude).toBe('claude-opus-4-20250514')
+        expect(settings?.selectedModels.claude).toBe('claude-opus-4-6')
       })
     })
   })

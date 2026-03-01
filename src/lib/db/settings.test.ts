@@ -44,7 +44,7 @@ describe('settings', () => {
       apiKeys: { claude: 'key-1', chatgpt: 'key-2', gemini: 'key-3' },
     })
     await updateSettings({
-      selectedModels: { claude: 'claude-opus-4-20250514' },
+      selectedModels: { claude: 'claude-opus-4-6' },
       theme: 'light',
     })
     await updateSettings({ apiKeys: { claude: 'key-updated' } })
@@ -52,7 +52,7 @@ describe('settings', () => {
     const settings = await getSettings()
     expect(settings.apiKeys.claude).toBe('key-updated')
     expect(settings.apiKeys.chatgpt).toBe('key-2')
-    expect(settings.selectedModels.claude).toBe('claude-opus-4-20250514')
+    expect(settings.selectedModels.claude).toBe('claude-opus-4-6')
     expect(settings.theme).toBe('light')
   })
 })

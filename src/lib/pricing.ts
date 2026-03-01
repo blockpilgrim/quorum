@@ -25,19 +25,16 @@ export interface ModelPricing {
  */
 export const MODEL_PRICING: Record<string, ModelPricing> = {
   // Claude
-  'claude-sonnet-4-20250514': { inputPer1M: 3, outputPer1M: 15 },
-  'claude-opus-4-20250514': { inputPer1M: 15, outputPer1M: 75 },
-  'claude-haiku-3-5-20241022': { inputPer1M: 0.8, outputPer1M: 4 },
+  'claude-sonnet-4-6': { inputPer1M: 3, outputPer1M: 15 },
+  'claude-opus-4-6': { inputPer1M: 5, outputPer1M: 25 },
 
   // OpenAI
-  'gpt-4o': { inputPer1M: 2.5, outputPer1M: 10 },
-  'gpt-4o-mini': { inputPer1M: 0.15, outputPer1M: 0.6 },
-  o1: { inputPer1M: 15, outputPer1M: 60 },
-  'o3-mini': { inputPer1M: 1.1, outputPer1M: 4.4 },
+  'gpt-5.2': { inputPer1M: 1.75, outputPer1M: 14 },
+  'gpt-5.3-codex': { inputPer1M: 1.75, outputPer1M: 14 },
 
   // Gemini
-  'gemini-2.0-flash': { inputPer1M: 0.1, outputPer1M: 0.4 },
-  'gemini-2.5-pro-preview-06-05': { inputPer1M: 1.25, outputPer1M: 10 },
+  'gemini-3.1-pro-preview': { inputPer1M: 2, outputPer1M: 12 },
+  'gemini-3-flash-preview': { inputPer1M: 0.5, outputPer1M: 3 },
 }
 
 // ---------------------------------------------------------------------------

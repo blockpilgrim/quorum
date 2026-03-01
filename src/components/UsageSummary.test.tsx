@@ -28,9 +28,9 @@ global.ResizeObserver = ResizeObserverStub as unknown as typeof ResizeObserver
 import { UsageSummary } from '@/components/UsageSummary'
 
 const defaultModels = {
-  claude: 'claude-sonnet-4-20250514',
-  chatgpt: 'gpt-4o',
-  gemini: 'gemini-2.0-flash',
+  claude: 'claude-sonnet-4-6',
+  chatgpt: 'gpt-5.2',
+  gemini: 'gemini-3-flash-preview',
 }
 
 beforeEach(async () => {
@@ -207,8 +207,8 @@ describe('UsageSummary', () => {
       openPopover()
 
       await waitFor(() => {
-        // Model display name for 'claude-sonnet-4-20250514' is 'Sonnet 4'
-        expect(screen.getAllByText('Sonnet 4').length).toBeGreaterThanOrEqual(1)
+        // Model display name for 'claude-sonnet-4-6' is 'Sonnet 4.6'
+        expect(screen.getAllByText('Sonnet 4.6').length).toBeGreaterThanOrEqual(1)
       })
     })
 

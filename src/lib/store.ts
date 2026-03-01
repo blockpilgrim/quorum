@@ -51,9 +51,9 @@ export const useAppStore = create<AppStore>()((set) => ({
   activeConversationId: null,
   sidebarOpen: true,
   selectedModels: {
-    claude: 'claude-sonnet-4-20250514',
-    chatgpt: 'gpt-4o',
-    gemini: 'gemini-2.0-flash',
+    claude: 'claude-sonnet-4-6',
+    chatgpt: 'gpt-5.2',
+    gemini: 'gemini-3-flash-preview',
   },
   theme: 'dark',
   streamingStatus: {

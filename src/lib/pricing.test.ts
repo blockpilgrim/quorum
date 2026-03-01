@@ -15,21 +15,18 @@ import { MODEL_OPTIONS } from '@/lib/models'
 
 describe('MODEL_PRICING', () => {
   it('has pricing for all Claude models', () => {
-    expect(MODEL_PRICING['claude-sonnet-4-20250514']).toBeDefined()
-    expect(MODEL_PRICING['claude-opus-4-20250514']).toBeDefined()
-    expect(MODEL_PRICING['claude-haiku-3-5-20241022']).toBeDefined()
+    expect(MODEL_PRICING['claude-sonnet-4-6']).toBeDefined()
+    expect(MODEL_PRICING['claude-opus-4-6']).toBeDefined()
   })
 
   it('has pricing for all OpenAI models', () => {
-    expect(MODEL_PRICING['gpt-4o']).toBeDefined()
-    expect(MODEL_PRICING['gpt-4o-mini']).toBeDefined()
-    expect(MODEL_PRICING['o1']).toBeDefined()
-    expect(MODEL_PRICING['o3-mini']).toBeDefined()
+    expect(MODEL_PRICING['gpt-5.2']).toBeDefined()
+    expect(MODEL_PRICING['gpt-5.3-codex']).toBeDefined()
   })
 
   it('has pricing for all Gemini models', () => {
-    expect(MODEL_PRICING['gemini-2.0-flash']).toBeDefined()
-    expect(MODEL_PRICING['gemini-2.5-pro-preview-06-05']).toBeDefined()
+    expect(MODEL_PRICING['gemini-3-flash-preview']).toBeDefined()
+    expect(MODEL_PRICING['gemini-3.1-pro-preview']).toBeDefined()
   })
 
   it('has pricing for every model in MODEL_OPTIONS', () => {
@@ -55,41 +52,41 @@ describe('MODEL_PRICING', () => {
 })
 
 describe('calculateCost', () => {
-  it('calculates cost for Claude Sonnet', () => {
+  it('calculates cost for Claude Sonnet 4.6', () => {
     // 1000 input tokens at $3/1M = $0.003
     // 500 output tokens at $15/1M = $0.0075
-    const cost = calculateCost('claude-sonnet-4-20250514', {
+    const cost = calculateCost('claude-sonnet-4-6', {
       input: 1000,
       output: 500,
     })
     expect(cost).toBeCloseTo(0.0105, 6)
   })
 
-  it('calculates cost for Claude Opus', () => {
-    // 1M input tokens at $15/1M = $15
-    // 1M output tokens at $75/1M = $75
-    const cost = calculateCost('claude-opus-4-20250514', {
+  it('calculates cost for Claude Opus 4.6', () => {
+    // 1M input tokens at $5/1M = $5
+    // 1M output tokens at $25/1M = $25
+    const cost = calculateCost('claude-opus-4-6', {
       input: 1_000_000,
       output: 1_000_000,
     })
-    expect(cost).toBeCloseTo(90, 2)
+    expect(cost).toBeCloseTo(30, 2)
   })
 
-  it('calculates cost for GPT-4o', () => {
-    // 5000 input tokens at $2.50/1M = $0.0125
-    // 2000 output tokens at $10/1M = $0.02
-    const cost = calculateCost('gpt-4o', { input: 5000, output: 2000 })
-    expect(cost).toBeCloseTo(0.0325, 6)
+  it('calculates cost for GPT-5.2', () => {
+    // 5000 input tokens at $1.75/1M = $0.00875
+    // 2000 output tokens at $14/1M = $0.028
+    const cost = calculateCost('gpt-5.2', { input: 5000, output: 2000 })
+    expect(cost).toBeCloseTo(0.03675, 6)
   })
 
-  it('calculates cost for Gemini Flash (cheapest model)', () => {
-    // 10000 input tokens at $0.10/1M = $0.001
-    // 5000 output tokens at $0.40/1M = $0.002
-    const cost = calculateCost('gemini-2.0-flash', {
+  it('calculates cost for Gemini 3 Flash (cheapest model)', () => {
+    // 10000 input tokens at $0.50/1M = $0.005
+    // 5000 output tokens at $3/1M = $0.015
+    const cost = calculateCost('gemini-3-flash-preview', {
       input: 10000,
       output: 5000,
     })
-    expect(cost).toBeCloseTo(0.003, 6)
+    expect(cost).toBeCloseTo(0.02, 6)
   })
 
   it('returns null for unknown models', () => {
@@ -98,31 +95,31 @@ describe('calculateCost', () => {
   })
 
   it('returns 0 for zero tokens', () => {
-    const cost = calculateCost('gpt-4o', { input: 0, output: 0 })
+    const cost = calculateCost('gpt-5.2', { input: 0, output: 0 })
     expect(cost).toBe(0)
   })
 
   it('handles input-only usage', () => {
-    const cost = calculateCost('gpt-4o', { input: 1_000_000, output: 0 })
-    expect(cost).toBeCloseTo(2.5, 2)
+    const cost = calculateCost('gpt-5.2', { input: 1_000_000, output: 0 })
+    expect(cost).toBeCloseTo(1.75, 2)
   })
 
   it('handles output-only usage', () => {
-    const cost = calculateCost('gpt-4o', { input: 0, output: 1_000_000 })
-    expect(cost).toBeCloseTo(10, 2)
+    const cost = calculateCost('gpt-5.2', { input: 0, output: 1_000_000 })
+    expect(cost).toBeCloseTo(14, 2)
   })
 })
 
 describe('calculateTotalCost', () => {
   it('sums costs across multiple token counts', () => {
-    const cost = calculateTotalCost('gpt-4o', [
+    const cost = calculateTotalCost('gpt-5.2', [
       { input: 1000, output: 500 },
       { input: 2000, output: 1000 },
       { input: 3000, output: 1500 },
     ])
-    // Total: 6000 input at $2.50/1M + 3000 output at $10/1M
-    // = $0.015 + $0.03 = $0.045
-    expect(cost).toBeCloseTo(0.045, 6)
+    // Total: 6000 input at $1.75/1M + 3000 output at $14/1M
+    // = $0.0105 + $0.042 = $0.0525
+    expect(cost).toBeCloseTo(0.0525, 6)
   })
 
   it('returns null for unknown models', () => {
@@ -133,13 +130,13 @@ describe('calculateTotalCost', () => {
   })
 
   it('handles empty array', () => {
-    const cost = calculateTotalCost('gpt-4o', [])
+    const cost = calculateTotalCost('gpt-5.2', [])
     expect(cost).toBe(0)
   })
 
   it('handles single token count', () => {
-    const single = calculateCost('gpt-4o', { input: 1000, output: 500 })
-    const total = calculateTotalCost('gpt-4o', [{ input: 1000, output: 500 }])
+    const single = calculateCost('gpt-5.2', { input: 1000, output: 500 })
+    const total = calculateTotalCost('gpt-5.2', [{ input: 1000, output: 500 }])
     expect(total).toEqual(single)
   })
 })

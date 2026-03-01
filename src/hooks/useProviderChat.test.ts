@@ -150,7 +150,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: 1,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
 
@@ -163,7 +163,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: 1,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
 
@@ -179,7 +179,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: 1,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
 
@@ -194,7 +194,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'gemini',
           conversationId: 1,
-          model: 'gemini-2.0-flash',
+          model: 'gemini-3-flash-preview',
         }),
       )
 
@@ -207,7 +207,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'chatgpt',
           conversationId: 1,
-          model: 'gpt-4o',
+          model: 'gpt-5.2',
         }),
       )
 
@@ -237,7 +237,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: 1,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
 
@@ -263,7 +263,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: null,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
 
@@ -291,7 +291,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: 1,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
 
@@ -313,7 +313,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: 1,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
 
@@ -344,7 +344,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: null,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
 
@@ -368,7 +368,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: 1,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
 
@@ -394,7 +394,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: null,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
 
@@ -411,7 +411,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: 1,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
 
@@ -429,7 +429,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: 1,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
 
@@ -446,7 +446,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: 1,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
 
@@ -474,7 +474,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: 1,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
 
@@ -495,7 +495,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: 1,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
 
@@ -528,7 +528,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: 1,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
 
@@ -555,7 +555,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: 1,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
 
@@ -582,7 +582,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: 1,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
 
@@ -614,7 +614,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: 1,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
 
@@ -646,7 +646,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: 1,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
 
@@ -679,7 +679,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: 1,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
 
@@ -713,7 +713,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: 1,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
 
@@ -740,7 +740,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: 1,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
 
@@ -766,7 +766,7 @@ describe('useProviderChat', () => {
           useProviderChat({
             provider: 'claude',
             conversationId,
-            model: 'claude-sonnet-4-20250514',
+            model: 'claude-sonnet-4-6',
           }),
         { initialProps: { conversationId: 1 as number | null } },
       )
@@ -791,7 +791,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: 1,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
       expect(result.current.isLoading).toBe(false)
@@ -814,7 +814,7 @@ describe('useProviderChat', () => {
         useProviderChat({
           provider: 'claude',
           conversationId: 1,
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
         }),
       )
       expect(result.current.stop).toBeDefined()

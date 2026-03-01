@@ -49,7 +49,7 @@ function validBody(
 ): Record<string, unknown> {
   return {
     provider: 'claude',
-    model: 'claude-sonnet-4-20250514',
+    model: 'claude-sonnet-4-6',
     messages: [{ role: 'user', content: 'Hello' }],
     apiKey: 'sk-test-key-123',
     ...overrides,
@@ -177,7 +177,7 @@ describe('provider routing', () => {
   it('routes chatgpt to OpenAI', async () => {
     setupStreamTextSuccess()
     const context = createMockContext(
-      validBody({ provider: 'chatgpt', model: 'gpt-4o' }),
+      validBody({ provider: 'chatgpt', model: 'gpt-5.2' }),
     )
     await onRequestPost(
       context as unknown as Parameters<typeof onRequestPost>[0],
@@ -190,7 +190,7 @@ describe('provider routing', () => {
   it('routes gemini to Google', async () => {
     setupStreamTextSuccess()
     const context = createMockContext(
-      validBody({ provider: 'gemini', model: 'gemini-2.0-flash' }),
+      validBody({ provider: 'gemini', model: 'gemini-3-flash-preview' }),
     )
     await onRequestPost(
       context as unknown as Parameters<typeof onRequestPost>[0],

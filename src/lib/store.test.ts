@@ -8,9 +8,9 @@ const defaultState = {
   activeConversationId: null,
   sidebarOpen: true,
   selectedModels: {
-    claude: 'claude-sonnet-4-20250514',
-    chatgpt: 'gpt-4o',
-    gemini: 'gemini-2.0-flash',
+    claude: 'claude-sonnet-4-6',
+    chatgpt: 'gpt-5.2',
+    gemini: 'gemini-3-flash-preview',
   },
   theme: 'dark' as const,
   streamingStatus: {
@@ -30,7 +30,7 @@ describe('Zustand store', () => {
     expect(state.activeConversationId).toBeNull()
     expect(state.sidebarOpen).toBe(true)
     expect(state.theme).toBe('dark')
-    expect(state.selectedModels.claude).toBe('claude-sonnet-4-20250514')
+    expect(state.selectedModels.claude).toBe('claude-sonnet-4-6')
   })
 
   it('sets active conversation id', () => {
@@ -50,11 +50,11 @@ describe('Zustand store', () => {
   })
 
   it('updates a single model without affecting others', () => {
-    useAppStore.getState().setSelectedModel('claude', 'claude-opus-4-20250514')
+    useAppStore.getState().setSelectedModel('claude', 'claude-opus-4-6')
     const { selectedModels } = useAppStore.getState()
-    expect(selectedModels.claude).toBe('claude-opus-4-20250514')
-    expect(selectedModels.chatgpt).toBe('gpt-4o')
-    expect(selectedModels.gemini).toBe('gemini-2.0-flash')
+    expect(selectedModels.claude).toBe('claude-opus-4-6')
+    expect(selectedModels.chatgpt).toBe('gpt-5.2')
+    expect(selectedModels.gemini).toBe('gemini-3-flash-preview')
   })
 
   describe('streamingStatus', () => {

@@ -22,7 +22,7 @@ interface UseProviderChatOptions {
   provider: Provider
   /** The active conversation ID (null = no conversation). */
   conversationId: number | null
-  /** The model ID to use (e.g., 'claude-sonnet-4-20250514'). */
+  /** The model ID to use (e.g., 'claude-sonnet-4-6'). */
   model: string
 }
 

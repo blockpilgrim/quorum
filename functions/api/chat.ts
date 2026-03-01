@@ -273,6 +273,34 @@ function createModel(provider: Provider, model: string, apiKey: string) {
   }
 }
 
+/**
+ * Provider-specific options to enable thinking/reasoning for each provider.
+ *
+ * - Claude: adaptive thinking (model decides when and how deeply to think)
+ * - OpenAI: reasoning effort set to 'high'
+ * - Gemini: thinkingConfig with high level and thoughts included
+ */
+const PROVIDER_OPTIONS = {
+  claude: {
+    anthropic: {
+      thinking: { type: 'adaptive' },
+    },
+  },
+  chatgpt: {
+    openai: {
+      reasoningEffort: 'high',
+    },
+  },
+  gemini: {
+    google: {
+      thinkingConfig: {
+        thinkingLevel: 'high',
+        includeThoughts: true,
+      },
+    },
+  },
+} satisfies Record<Provider, Record<string, Record<string, string | boolean | Record<string, string | boolean>>>>
+
 // ---------------------------------------------------------------------------
 // Request Handlers
 // ---------------------------------------------------------------------------
@@ -325,10 +353,11 @@ export const onRequestPost: PagesFunction = async (context) => {
     // Create the provider-specific model instance
     const languageModel = createModel(provider, model, apiKey)
 
-    // Stream the response using AI SDK
+    // Stream the response using AI SDK with provider-specific thinking/reasoning
     const result = streamText({
       model: languageModel,
       messages,
+      providerOptions: PROVIDER_OPTIONS[provider],
     })
 
     // Return the stream as a UI message stream response (compatible with useChat).
@@ -337,6 +366,7 @@ export const onRequestPost: PagesFunction = async (context) => {
     // The messageMetadata callback extracts token usage from the finish event
     // and sends it to the client as message metadata.
     const streamResponse = result.toUIMessageStreamResponse({
+      sendReasoning: true,
       onError: (err) => {
         const { body } = mapError(err, provider)
         return body.error.message

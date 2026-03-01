@@ -57,9 +57,9 @@ describe('MODEL_DISPLAY_NAMES', () => {
 
 describe('getModelDisplayName', () => {
   it('returns the correct display name for known model IDs', () => {
-    expect(getModelDisplayName('claude-sonnet-4-20250514')).toBe('Sonnet 4')
-    expect(getModelDisplayName('gpt-4o')).toBe('GPT-4o')
-    expect(getModelDisplayName('gemini-2.0-flash')).toBe('2.0 Flash')
+    expect(getModelDisplayName('claude-sonnet-4-6')).toBe('Sonnet 4.6')
+    expect(getModelDisplayName('gpt-5.2')).toBe('GPT-5.2')
+    expect(getModelDisplayName('gemini-3-flash-preview')).toBe('3 Flash')
   })
 
   it('returns the raw ID for unknown model IDs (fallback)', () => {
