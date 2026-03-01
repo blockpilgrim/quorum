@@ -32,7 +32,7 @@ describe('MODEL_PRICING', () => {
   })
 
   it('has positive prices for all models', () => {
-    for (const [modelId, pricing] of Object.entries(MODEL_PRICING)) {
+    for (const [, pricing] of Object.entries(MODEL_PRICING)) {
       expect(pricing.inputPer1M).toBeGreaterThan(0)
       expect(pricing.outputPer1M).toBeGreaterThan(0)
       // Output is generally more expensive than or equal to input
