@@ -50,6 +50,7 @@ export const ModelColumn = memo(
       clearError,
       isLoading,
       crossFeedIds,
+      tokenCountMap,
     } = useProviderChat({
       provider,
       conversationId: activeConversationId,
@@ -129,6 +130,7 @@ export const ModelColumn = memo(
                       content={getMessageText(msg)}
                       isStreaming={isCurrentlyStreaming}
                       isCrossFeed={crossFeedIds.has(msg.id)}
+                      tokenCount={tokenCountMap.get(msg.id)}
                     />
                   )
                 })}

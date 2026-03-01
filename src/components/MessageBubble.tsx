@@ -13,6 +13,8 @@ import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { ArrowLeftRightIcon, CheckIcon, CopyIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import type { TokenCount } from '@/lib/db/types'
+import { formatTokenCount } from '@/lib/pricing'
 import { cn } from '@/lib/utils'
 
 interface MessageBubbleProps {
@@ -23,6 +25,8 @@ interface MessageBubbleProps {
   isStreaming?: boolean
   /** Whether this message is part of a cross-feed round. */
   isCrossFeed?: boolean
+  /** Token usage for this message (only for assistant messages). */
+  tokenCount?: TokenCount | null
 }
 
 export const MessageBubble = memo(function MessageBubble({
@@ -31,6 +35,7 @@ export const MessageBubble = memo(function MessageBubble({
   timestamp,
   isStreaming = false,
   isCrossFeed = false,
+  tokenCount,
 }: MessageBubbleProps) {
   const [copied, setCopied] = useState(false)
 
@@ -79,21 +84,32 @@ export const MessageBubble = memo(function MessageBubble({
         </div>
       )}
 
-      {/* Footer: timestamp + copy button */}
+      {/* Footer: timestamp + token count + copy button */}
       <div
         className={cn(
           'mt-1 flex items-center gap-1',
           isUser ? 'justify-end' : 'justify-between',
         )}
       >
-        {timestamp && (
-          <time
-            className="text-muted-foreground text-[10px]"
-            dateTime={timestamp}
-          >
-            {formatTime(timestamp)}
-          </time>
-        )}
+        <div className="flex items-center gap-1.5">
+          {timestamp && (
+            <time
+              className="text-muted-foreground text-[10px]"
+              dateTime={timestamp}
+            >
+              {formatTime(timestamp)}
+            </time>
+          )}
+
+          {!isUser && tokenCount && (
+            <span
+              className="text-muted-foreground text-[10px]"
+              title={`Input: ${tokenCount.input.toLocaleString()} | Output: ${tokenCount.output.toLocaleString()}`}
+            >
+              {formatTokenCount(tokenCount.input + tokenCount.output)} tokens
+            </span>
+          )}
+        </div>
 
         {!isUser && (
           <Button

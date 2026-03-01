@@ -14,7 +14,7 @@ import { DefaultChatTransport } from 'ai'
 import type { UIMessage } from 'ai'
 import { addMessage, getMessagesByThread } from '@/lib/db'
 import { getSettings } from '@/lib/db/settings'
-import type { Provider } from '@/lib/db/types'
+import type { Provider, TokenCount } from '@/lib/db/types'
 import { useAppStore } from '@/lib/store'
 
 interface UseProviderChatOptions {
@@ -49,6 +49,8 @@ interface UseProviderChatReturn {
   isLoading: boolean
   /** Set of UIMessage IDs that are cross-feed messages. */
   crossFeedIds: Set<string>
+  /** Map of UIMessage IDs to token counts (for assistant messages). */
+  tokenCountMap: Map<string, TokenCount>
 }
 
 /**
@@ -67,7 +69,7 @@ export function getMessageText(message: UIMessage): string {
 
 /**
  * Convert Dexie messages to the UIMessage format expected by useChat.
- * Also returns a set of IDs for cross-feed messages.
+ * Also returns a set of IDs for cross-feed messages and a map of token counts.
  */
 function toUIMessages(
   dbMessages: Array<{
@@ -75,13 +77,22 @@ function toUIMessages(
     role: 'user' | 'assistant'
     content: string
     isCrossFeed?: boolean
+    tokenCount?: TokenCount | null
   }>,
-): { uiMessages: UIMessage[]; crossFeedIds: Set<string> } {
+): {
+  uiMessages: UIMessage[]
+  crossFeedIds: Set<string>
+  tokenCountMap: Map<string, TokenCount>
+} {
   const crossFeedIds = new Set<string>()
+  const tokenCountMap = new Map<string, TokenCount>()
   const uiMessages = dbMessages.map((msg) => {
     const id = String(msg.id ?? Math.random())
     if (msg.isCrossFeed) {
       crossFeedIds.add(id)
+    }
+    if (msg.tokenCount) {
+      tokenCountMap.set(id, msg.tokenCount)
     }
     return {
       id,
@@ -89,7 +100,7 @@ function toUIMessages(
       parts: [{ type: 'text' as const, text: msg.content }],
     }
   })
-  return { uiMessages, crossFeedIds }
+  return { uiMessages, crossFeedIds, tokenCountMap }
 }
 
 export function useProviderChat({
@@ -103,6 +114,11 @@ export function useProviderChat({
 
   // Set of UIMessage IDs that are cross-feed messages, for visual styling.
   const [crossFeedIds, setCrossFeedIds] = useState<Set<string>>(new Set())
+
+  // Map of UIMessage IDs to token counts (populated from Dexie and onFinish).
+  const [tokenCountMap, setTokenCountMap] = useState<Map<string, TokenCount>>(
+    new Map(),
+  )
 
   // Track whether we are currently persisting to avoid double-saves.
   const persistingRef = useRef(false)
@@ -173,14 +189,45 @@ export function useProviderChat({
           const content = getMessageText(message)
           if (content) {
             const crossFeedOpts = pendingCrossFeedRef.current
+
+            // Extract token usage from message metadata (sent by the proxy)
+            const metadata = message.metadata as
+              | {
+                  usage?: {
+                    inputTokens?: number
+                    outputTokens?: number
+                  }
+                }
+              | undefined
+            const usage = metadata?.usage
+            const tokenCount =
+              usage &&
+              (usage.inputTokens !== undefined ||
+                usage.outputTokens !== undefined)
+                ? {
+                    input: usage.inputTokens ?? 0,
+                    output: usage.outputTokens ?? 0,
+                  }
+                : null
+
             await addMessage({
               conversationId,
               provider,
               role: 'assistant',
               content,
+              tokenCount,
               isCrossFeed: crossFeedOpts.isCrossFeed,
               crossFeedRound: crossFeedOpts.crossFeedRound,
             })
+
+            // Update the token count map for the UI
+            if (tokenCount) {
+              setTokenCountMap((prev) => {
+                const next = new Map(prev)
+                next.set(message.id, tokenCount)
+                return next
+              })
+            }
           }
         } finally {
           persistingRef.current = false
@@ -237,6 +284,7 @@ export function useProviderChat({
       // No active conversation: clear messages
       setMessages([])
       setCrossFeedIds(new Set())
+      setTokenCountMap(new Map())
       seededConversationRef.current = null
       return
     }
@@ -253,9 +301,14 @@ export function useProviderChat({
       try {
         const dbMessages = await getMessagesByThread(conversationId, provider)
         if (cancelled) return
-        const { uiMessages, crossFeedIds: cfIds } = toUIMessages(dbMessages)
+        const {
+          uiMessages,
+          crossFeedIds: cfIds,
+          tokenCountMap: tcMap,
+        } = toUIMessages(dbMessages)
         setMessages(uiMessages)
         setCrossFeedIds(cfIds)
+        setTokenCountMap(tcMap)
         seededConversationRef.current = conversationId
       } catch (err) {
         console.error(`[${provider}] Failed to seed messages:`, err)
@@ -316,5 +369,6 @@ export function useProviderChat({
     clearError,
     isLoading,
     crossFeedIds,
+    tokenCountMap,
   }
 }

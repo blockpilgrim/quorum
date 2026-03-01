@@ -5,6 +5,7 @@
 import { MenuIcon, PlusIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SettingsDialog } from '@/components/SettingsDialog'
+import { UsageSummary } from '@/components/UsageSummary'
 import { useAppStore } from '@/lib/store'
 
 interface TopBarProps {
@@ -31,6 +32,8 @@ export function TopBar({ onNewConversation }: TopBarProps) {
       </h1>
 
       <div className="flex-1" />
+
+      <UsageSummary />
 
       <SettingsDialog />
 

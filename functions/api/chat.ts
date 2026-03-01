@@ -334,10 +334,23 @@ export const onRequestPost: PagesFunction = async (context) => {
     // Return the stream as a UI message stream response (compatible with useChat).
     // The onError callback transforms provider errors into user-friendly messages
     // that are sent to the client via the stream protocol.
+    // The messageMetadata callback extracts token usage from the finish event
+    // and sends it to the client as message metadata.
     const streamResponse = result.toUIMessageStreamResponse({
       onError: (err) => {
         const { body } = mapError(err, provider)
         return body.error.message
+      },
+      messageMetadata: ({ part }) => {
+        if (part.type === 'finish') {
+          return {
+            usage: {
+              inputTokens: part.totalUsage.inputTokens ?? 0,
+              outputTokens: part.totalUsage.outputTokens ?? 0,
+            },
+          }
+        }
+        return undefined
       },
     })
 
