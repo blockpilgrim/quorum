@@ -273,6 +273,121 @@ describe('error mapping', () => {
   })
 })
 
+describe('providerOptions (thinking/reasoning)', () => {
+  type StreamTextArgs = {
+    model: unknown
+    messages: unknown
+    providerOptions?: Record<string, unknown>
+  }
+
+  /** Make a request for a given provider and return the args passed to streamText. */
+  async function captureStreamTextArgs(
+    provider: string,
+    model: string,
+  ): Promise<StreamTextArgs> {
+    setupStreamTextSuccess()
+    const context = createMockContext(validBody({ provider, model }))
+    await onRequestPost(
+      context as unknown as Parameters<typeof onRequestPost>[0],
+    )
+    expect(mockStreamText).toHaveBeenCalledTimes(1)
+    return mockStreamText.mock.calls[0][0] as StreamTextArgs
+  }
+
+  it('passes anthropic adaptive thinking for claude provider', async () => {
+    const args = await captureStreamTextArgs('claude', 'claude-sonnet-4-6')
+    expect(args.providerOptions).toBeDefined()
+    expect(args.providerOptions!.anthropic).toEqual({
+      thinking: { type: 'adaptive' },
+    })
+  })
+
+  it('passes openai reasoning effort for chatgpt provider', async () => {
+    const args = await captureStreamTextArgs('chatgpt', 'gpt-5.2')
+    expect(args.providerOptions).toBeDefined()
+    expect(args.providerOptions!.openai).toEqual({
+      reasoningEffort: 'high',
+    })
+  })
+
+  it('passes google thinkingConfig for gemini provider', async () => {
+    const args = await captureStreamTextArgs('gemini', 'gemini-3-flash-preview')
+    expect(args.providerOptions).toBeDefined()
+    expect(args.providerOptions!.google).toEqual({
+      thinkingConfig: {
+        thinkingLevel: 'high',
+        includeThoughts: true,
+      },
+    })
+  })
+
+  it('always includes providerOptions for every supported provider', async () => {
+    for (const [provider, model] of [
+      ['claude', 'claude-sonnet-4-6'],
+      ['chatgpt', 'gpt-5.2'],
+      ['gemini', 'gemini-3-flash-preview'],
+    ] as const) {
+      vi.clearAllMocks()
+      mockAnthropicModel.mockReturnValue('anthropic-model-instance')
+      mockOpenAIModel.mockReturnValue('openai-model-instance')
+      mockGoogleModel.mockReturnValue('google-model-instance')
+
+      const args = await captureStreamTextArgs(provider, model)
+      expect(
+        args.providerOptions,
+        `providerOptions missing for ${provider}`,
+      ).toBeDefined()
+    }
+  })
+})
+
+describe('sendReasoning flag', () => {
+  type UIStreamOptions = {
+    sendReasoning?: boolean
+    onError?: unknown
+    messageMetadata?: unknown
+  }
+
+  /** Make a request and capture the options passed to toUIMessageStreamResponse. */
+  async function captureUIStreamOptions(): Promise<UIStreamOptions> {
+    let captured: UIStreamOptions | undefined
+    const mockToUIStream = vi.fn((opts: UIStreamOptions) => {
+      captured = opts
+      return new Response('stream')
+    })
+    mockStreamText.mockReturnValue({
+      toUIMessageStreamResponse: mockToUIStream,
+    })
+
+    const context = createMockContext(validBody())
+    await onRequestPost(
+      context as unknown as Parameters<typeof onRequestPost>[0],
+    )
+
+    expect(mockToUIStream).toHaveBeenCalledTimes(1)
+    return captured!
+  }
+
+  it('passes sendReasoning: true to toUIMessageStreamResponse', async () => {
+    const opts = await captureUIStreamOptions()
+    expect(opts.sendReasoning).toBe(true)
+  })
+
+  it('includes messageMetadata alongside sendReasoning', async () => {
+    const opts = await captureUIStreamOptions()
+    expect(opts.sendReasoning).toBe(true)
+    expect(opts.messageMetadata).toBeDefined()
+    expect(typeof opts.messageMetadata).toBe('function')
+  })
+
+  it('includes onError alongside sendReasoning', async () => {
+    const opts = await captureUIStreamOptions()
+    expect(opts.sendReasoning).toBe(true)
+    expect(opts.onError).toBeDefined()
+    expect(typeof opts.onError).toBe('function')
+  })
+})
+
 describe('messageMetadata callback', () => {
   type MetadataPart = { type: string; totalUsage?: Record<string, number> }
   type MetadataCallback = (opts: { part: MetadataPart }) => unknown

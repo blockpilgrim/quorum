@@ -49,6 +49,63 @@ describe('MODEL_PRICING', () => {
       expect(pricing.outputPer1M).toBeGreaterThanOrEqual(pricing.inputPer1M)
     }
   })
+
+  it('does not contain deprecated model IDs', () => {
+    const deprecated = [
+      'claude-sonnet-4-20250514',
+      'claude-opus-4-20250514',
+      'claude-haiku-3-5-20241022',
+      'gpt-4o',
+      'gpt-4o-mini',
+      'o1',
+      'o3-mini',
+      'gemini-2.0-flash',
+      'gemini-2.5-pro-preview-06-05',
+    ]
+    for (const old of deprecated) {
+      expect(
+        MODEL_PRICING[old],
+        `Deprecated model ${old} should not be in pricing table`,
+      ).toBeUndefined()
+    }
+  })
+
+  it('has correct specific pricing for Claude models', () => {
+    expect(MODEL_PRICING['claude-sonnet-4-6']).toEqual({
+      inputPer1M: 3,
+      outputPer1M: 15,
+    })
+    expect(MODEL_PRICING['claude-opus-4-6']).toEqual({
+      inputPer1M: 5,
+      outputPer1M: 25,
+    })
+  })
+
+  it('has correct specific pricing for OpenAI models', () => {
+    expect(MODEL_PRICING['gpt-5.2']).toEqual({
+      inputPer1M: 1.75,
+      outputPer1M: 14,
+    })
+    expect(MODEL_PRICING['gpt-5.3-codex']).toEqual({
+      inputPer1M: 1.75,
+      outputPer1M: 14,
+    })
+  })
+
+  it('has correct specific pricing for Gemini models', () => {
+    expect(MODEL_PRICING['gemini-3-flash-preview']).toEqual({
+      inputPer1M: 0.5,
+      outputPer1M: 3,
+    })
+    expect(MODEL_PRICING['gemini-3.1-pro-preview']).toEqual({
+      inputPer1M: 2,
+      outputPer1M: 12,
+    })
+  })
+
+  it('contains exactly 6 models (no extras)', () => {
+    expect(Object.keys(MODEL_PRICING).length).toBe(6)
+  })
 })
 
 describe('calculateCost', () => {
