@@ -685,3 +685,55 @@ const hasCrossFeedContent = useLiveQuery(
 ```
 
 **Why**: `useLiveQuery` re-runs on any Dexie table change. Returning a boolean minimizes re-render impact — the component only updates when the boolean flips, not on every message write.
+
+---
+
+## Zustand `getState()` in Event Handlers to Avoid Stale Closures
+
+**When to use**: When an event handler fires after a delay (e.g., confirmation dialog) and needs the latest Zustand value, not the value from when the callback was created.
+
+**Example**:
+```tsx
+// Bad — stale closure if activeConversationId changes while dialog is open
+const handleDelete = useCallback(async (id: number) => {
+  await deleteConversation(id)
+  if (activeConversationId === id) {  // May be stale!
+    setActiveConversationId(null)
+  }
+}, [activeConversationId, setActiveConversationId])
+
+// Good — reads fresh value at execution time
+const handleDelete = useCallback(async (id: number) => {
+  await deleteConversation(id)
+  if (useAppStore.getState().activeConversationId === id) {
+    setActiveConversationId(null)
+  }
+}, [setActiveConversationId])
+```
+
+**Why**: `useCallback` closures capture values at creation time. When a confirmation dialog stays open while the user interacts elsewhere, the closed-over value can become stale. `useAppStore.getState()` reads the latest value synchronously at call time. This is safe in event handlers (not during render).
+
+---
+
+## Inline Edit Pattern for Sidebar Items
+
+**When to use**: When a list item needs in-place rename/edit capability.
+
+- Trigger: hover-reveal pencil button enters edit mode
+- Confirm: Enter key or input blur
+- Cancel: Escape key or X button
+- Use `onMouseDown` + `preventDefault` on confirm/cancel buttons to prevent blur firing before click
+
+**Example**:
+```tsx
+// Cancel button prevents blur from firing confirmRename before cancel runs
+<Button
+  onMouseDown={(e) => e.preventDefault()}  // Prevents onBlur from firing first
+  onClick={cancelRename}
+  aria-label="Cancel rename"
+>
+  <XIcon />
+</Button>
+```
+
+**Why**: When focus leaves an input, `onBlur` fires before `onClick` on a sibling button. Without `preventDefault` on `mouseDown`, clicking cancel would trigger the blur handler (which confirms) before the cancel handler runs. This pattern ensures the user's intent (cancel) takes priority.

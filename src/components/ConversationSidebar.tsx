@@ -130,22 +130,23 @@ function SidebarContent({
     async (id: number) => {
       try {
         await deleteConversation(id)
-        // If the deleted conversation was active, clear the selection
-        if (activeConversationId === id) {
+        // Read current active ID from store at execution time, not from closure.
+        // The delete dialog may stay open while the user switches conversations,
+        // so the closure's activeConversationId could be stale.
+        if (useAppStore.getState().activeConversationId === id) {
           setActiveConversationId(null)
         }
       } catch (err) {
         console.error('[Sidebar] Failed to delete conversation:', err)
       }
     },
-    [activeConversationId, setActiveConversationId],
+    [setActiveConversationId],
   )
 
   const handleRename = useCallback(async (id: number, newTitle: string) => {
-    const trimmed = newTitle.trim()
-    if (!trimmed) return
+    // Caller (confirmRename) already trims and validates non-empty
     try {
-      await updateConversation(id, { title: trimmed })
+      await updateConversation(id, { title: newTitle })
     } catch (err) {
       console.error('[Sidebar] Failed to rename conversation:', err)
     }
@@ -293,6 +294,10 @@ function ConversationItem({
           variant="ghost"
           size="icon"
           className="h-6 w-6 shrink-0"
+          onMouseDown={(e) => {
+            // Prevent onBlur from firing before click
+            e.preventDefault()
+          }}
           onClick={confirmRename}
           aria-label="Confirm rename"
         >
@@ -336,8 +341,8 @@ function ConversationItem({
         <MessageSquareIcon className="h-4 w-4 shrink-0" />
         <span className="min-w-0 flex-1 truncate">{conversation.title}</span>
 
-        {/* Action buttons -- visible on hover */}
-        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+        {/* Action buttons -- visible on hover or focus-within for keyboard users */}
+        <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           <Button
             variant="ghost"
             size="icon"
