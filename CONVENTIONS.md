@@ -14,6 +14,7 @@ src/
     ui/          # shadcn/ui primitives (auto-generated, do not hand-edit)
   lib/           # Shared utilities and core modules
     db/          # Data layer (Dexie schema, types, data access functions)
+    models.ts    # Model definitions, display names, provider constants
     store.ts     # Zustand store (ephemeral UI state)
     utils.ts     # Utility functions (cn(), helpers)
   hooks/         # Custom React hooks
@@ -422,7 +423,7 @@ vi.mock('@ai-sdk/anthropic', () => ({ createAnthropic: mockCreateAnthropic }))
 **When to use**: For all provider chat instances in model columns.
 
 - One `useProviderChat` instance per provider column, wrapping `@ai-sdk/react`'s `useChat`
-- `DefaultChatTransport` created once via `useMemo([], [])`, reads dynamic values (provider, model, API key) through refs at request time
+- `DefaultChatTransport` created once via `useMemo(() => ..., [])`, reads dynamic values (provider, model, API key) through refs at request time
 - `prepareSendMessagesRequest` callback reads API key from Dexie settings, converts `UIMessage` parts to `{role, content}` for the proxy
 - Persistence sync: user messages saved to Dexie on `send()`, assistant messages on `onFinish`
 - Message seeding: loads from Dexie when `conversationId` changes, clears on null
@@ -520,3 +521,87 @@ const isLoading = claudeRef.current?.isLoading // React 19 ESLint error
 **Why it fails**: React 19's `react-hooks/refs` rule prohibits reading `ref.current` during render because refs are not tracked by React's reactivity system. The value may be stale or cause inconsistent renders.
 
 **Do this instead**: Sync derived state to a Zustand store via `useEffect` in the child, and read it from the store in the parent/sibling (see "Streaming Status via Zustand Store" pattern above).
+
+---
+
+## Model & Provider Constants (`src/lib/models.ts`)
+
+**When to use**: When referencing model IDs, display names, or provider-level display constants.
+
+- `MODEL_OPTIONS`: Per-provider lists of available models (id + label), ordered by preference (default first)
+- `MODEL_DISPLAY_NAMES`: Flat map from model ID to display name
+- `getModelDisplayName(modelId)`: Lookup with fallback to raw ID for unknown models
+- `PROVIDER_LABELS`: Human-readable provider names (`claude` → `'Claude'`)
+- `PROVIDER_COLORS`: Tailwind accent color classes per provider (`claude` → `'bg-chart-1'`)
+
+**Example**:
+```ts
+import { getModelDisplayName, PROVIDER_COLORS, PROVIDER_LABELS } from '@/lib/models'
+
+// In a component
+<span>{getModelDisplayName('claude-sonnet-4-20250514')}</span> // → "Sonnet 4"
+<div className={cn('h-2 w-2 rounded-full', PROVIDER_COLORS[provider])} />
+```
+
+**Why**: Centralizes all model/provider display metadata in one module. When providers release new models, update only `src/lib/models.ts`. Both `SettingsDialog` and `ModelColumn` import from here.
+
+---
+
+## Settings Dual-Write Pattern (Dexie + Zustand)
+
+**When to use**: When a user changes a setting that needs both persistence (survives reload) and immediate runtime effect.
+
+- Write to Dexie via `updateSettings()` for persistence
+- Update Zustand setter for immediate runtime effect
+- API keys only need Dexie (read at request time via `getSettings()` in the transport callback)
+- Model selections need both (Zustand `selectedModels` drives `useProviderChat`)
+- On app mount, `App.tsx` syncs persisted settings from Dexie → Zustand
+
+**Example**:
+```ts
+// In SettingsDialog — model change needs dual-write
+const handleModelChange = async (modelId: string) => {
+  await updateSettings({ selectedModels: { [provider]: modelId } })
+  setSelectedModel(provider, modelId) // Zustand for immediate effect
+}
+
+// API key change only needs Dexie (read at request time)
+const handleApiKeyChange = (value: string) => {
+  updateSettings({ apiKeys: { [provider]: value } })
+}
+```
+
+**Why**: Dexie is the source of truth for persistence. Zustand is the source of truth for runtime. The dual-write keeps them in sync without adding a reactive subscription from Zustand to Dexie.
+
+---
+
+## Debounced Input Saving
+
+**When to use**: When a text input persists each change to Dexie (or any async store).
+
+- Maintain local `useState` for the input value (instant visual feedback)
+- Sync from parent prop via `useEffect` when external data changes
+- Debounce the Dexie write with `setTimeout` (~300ms)
+- Clean up the timer on unmount
+
+**Example**:
+```tsx
+const [localValue, setLocalValue] = useState(propValue)
+const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+useEffect(() => { setLocalValue(propValue) }, [propValue])
+
+const handleChange = (value: string) => {
+  setLocalValue(value)
+  if (debounceRef.current) clearTimeout(debounceRef.current)
+  debounceRef.current = setTimeout(() => {
+    updateSettings({ apiKeys: { [provider]: value } })
+  }, 300)
+}
+
+useEffect(() => () => {
+  if (debounceRef.current) clearTimeout(debounceRef.current)
+}, [])
+```
+
+**Why**: Without debouncing, each keystroke fires a full Dexie read-write transaction. For a 50-character API key, that is 50 sequential IndexedDB transactions. Debouncing batches rapid changes into a single write.

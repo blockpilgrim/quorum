@@ -9,7 +9,7 @@
  * Dialog state is managed locally -- no need for global state.
  */
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { EyeIcon, EyeOffIcon, SettingsIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -31,16 +31,9 @@ import {
 } from '@/components/ui/select'
 import { db, updateSettings } from '@/lib/db'
 import type { Provider } from '@/lib/db/types'
-import { MODEL_OPTIONS, PROVIDER_LABELS } from '@/lib/models'
+import { MODEL_OPTIONS, PROVIDER_COLORS, PROVIDER_LABELS } from '@/lib/models'
 import { useAppStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
-
-/** Provider-specific accent colors matching ModelColumn's PROVIDER_COLORS. */
-const PROVIDER_COLORS: Record<Provider, string> = {
-  claude: 'bg-chart-1',
-  chatgpt: 'bg-chart-2',
-  gemini: 'bg-chart-3',
-}
 
 /** The three providers in display order. */
 const PROVIDERS: Provider[] = ['claude', 'chatgpt', 'gemini']
@@ -108,9 +101,30 @@ function ProviderSection({
   const setSelectedModel = useAppStore((s) => s.setSelectedModel)
   const models = MODEL_OPTIONS[provider]
 
-  const handleApiKeyChange = async (value: string) => {
-    await updateSettings({ apiKeys: { [provider]: value } })
+  // Local state for the API key input (instant visual feedback).
+  // Debounce the Dexie write to avoid a transaction per keystroke.
+  const [localKey, setLocalKey] = useState(apiKey)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Sync from parent when Dexie value changes externally
+  useEffect(() => {
+    setLocalKey(apiKey)
+  }, [apiKey])
+
+  const handleApiKeyChange = (value: string) => {
+    setLocalKey(value)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      updateSettings({ apiKeys: { [provider]: value } })
+    }, 300)
   }
+
+  // Clean up debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [])
 
   const handleModelChange = async (modelId: string) => {
     // Update both Dexie (persistence) and Zustand (immediate runtime effect)
@@ -142,7 +156,7 @@ function ProviderSection({
           <Input
             id={`${provider}-api-key`}
             type={showKey ? 'text' : 'password'}
-            value={apiKey}
+            value={localKey}
             onChange={(e) => handleApiKeyChange(e.target.value)}
             placeholder={`Enter your ${PROVIDER_LABELS[provider]} API key`}
             className="pr-9"

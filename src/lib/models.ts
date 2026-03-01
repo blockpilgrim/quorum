@@ -61,3 +61,10 @@ export const PROVIDER_LABELS: Record<Provider, string> = {
   chatgpt: 'ChatGPT',
   gemini: 'Gemini',
 }
+
+/** Provider-specific accent colors for column headers and settings. */
+export const PROVIDER_COLORS: Record<Provider, string> = {
+  claude: 'bg-chart-1',
+  chatgpt: 'bg-chart-2',
+  gemini: 'bg-chart-3',
+}

@@ -54,14 +54,14 @@ Client-orchestrated: SPA reads latest responses from each model, constructs mess
 ### Performance Strategy
 - Each model column wrapped in `React.memo` for stream isolation
 - RAF buffering if needed for token rendering (60+ re-renders/sec from 3 streams)
-- Lazy-load tiktoken, export logic, settings panel
+- Lazy-load tiktoken, export logic
 - Bundle target: < 200 KB gzipped
 
 ## Implementation Phases
 
 13 sequential phases defined in `docs/IMPLEMENTATION-PLAN.md`. Key dependency: Phases 2-3 (data layer, app shell) and Phase 4 (proxy) can run in parallel. Phases 7-9 parallelize after Phase 6.
 
-**Current status:** Phase 6 complete. Tri-model streaming is fully wired -- a single user message fans out to Claude, ChatGPT, and Gemini concurrently. Each `ModelColumn` has its own `useProviderChat` instance with independent streaming, error state, and Dexie persistence. `React.memo` wraps each column for stream isolation. `Promise.allSettled` in `handleSend` ensures one provider failing does not block or affect the others. Error display is per-column.
+**Current status:** Phase 7 complete. Settings & API Key Management is fully implemented. `SettingsDialog` (gear icon in TopBar) provides per-provider API key inputs (debounced save to Dexie) and model selector dropdowns. Model constants centralized in `src/lib/models.ts`. Column headers show selected model display names. `App.tsx` syncs persisted settings from Dexie to Zustand on mount. First-run experience: pulsing gear icon when no API keys configured, InputBar disabled until at least one key is set. All three providers stream concurrently with error isolation via `Promise.allSettled`.
 
 ## Workflow: /implement Skill
 
