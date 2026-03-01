@@ -220,7 +220,7 @@ Each phase produces a working, testable increment. Phases are sequential — lat
 
 ---
 
-- [ ] ## Phase 8: Cross-Feed
+- [x] ## Phase 8: Cross-Feed
 
 **Goal**: User can trigger a cross-feed round that sends each model the other two models' latest responses.
 

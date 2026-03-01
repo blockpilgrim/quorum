@@ -14,13 +14,25 @@
  */
 
 import { useCallback, useEffect, useRef } from 'react'
+import { useLiveQuery } from 'dexie-react-hooks'
 import { TopBar } from '@/components/TopBar'
 import { ConversationSidebar } from '@/components/ConversationSidebar'
 import { ModelColumn } from '@/components/ModelColumn'
 import type { ModelColumnHandle } from '@/components/ModelColumn'
 import { InputBar } from '@/components/InputBar'
 import { useAppStore } from '@/lib/store'
-import { createConversation, getSettings, updateConversation } from '@/lib/db'
+import {
+  createConversation,
+  getSettings,
+  getMessagesByThread,
+  updateConversation,
+} from '@/lib/db'
+import {
+  buildCrossFeedMessages,
+  findLastAssistant,
+  getNextCrossFeedRound,
+} from '@/lib/crossfeed'
+import { db } from '@/lib/db'
 
 function App() {
   const activeConversationId = useAppStore((s) => s.activeConversationId)
@@ -56,6 +68,89 @@ function App() {
   const handleNewConversation = useCallback(() => {
     setActiveConversationId(null)
   }, [setActiveConversationId])
+
+  // Track whether cross-feed is available: all three providers must have
+  // at least one assistant message in the active conversation.
+  // useLiveQuery reactively updates when messages change in Dexie.
+  const hasCrossFeedContent = useLiveQuery(
+    async () => {
+      if (activeConversationId === null) return false
+
+      // Check each provider for at least one assistant message.
+      // Use count queries for efficiency (no need to load full messages).
+      const providers = ['claude', 'chatgpt', 'gemini'] as const
+      const counts = await Promise.all(
+        providers.map((p) =>
+          db.messages
+            .where('[conversationId+provider+timestamp]')
+            .between(
+              [activeConversationId, p, ''],
+              [activeConversationId, p, '\uffff'],
+            )
+            .filter((msg) => msg.role === 'assistant')
+            .count(),
+        ),
+      )
+      return counts.every((c) => c > 0)
+    },
+    [activeConversationId],
+    false, // default value while loading
+  )
+
+  const handleCrossFeed = useCallback(async () => {
+    if (!activeConversationId) return
+
+    try {
+      // Get latest messages from each provider
+      const [claudeMsgs, chatgptMsgs, geminiMsgs] = await Promise.all([
+        getMessagesByThread(activeConversationId, 'claude'),
+        getMessagesByThread(activeConversationId, 'chatgpt'),
+        getMessagesByThread(activeConversationId, 'gemini'),
+      ])
+
+      // Find the last assistant message for each
+      const lastClaude = findLastAssistant(claudeMsgs)
+      const lastChatgpt = findLastAssistant(chatgptMsgs)
+      const lastGemini = findLastAssistant(geminiMsgs)
+
+      // All three must have at least one assistant response
+      if (!lastClaude || !lastChatgpt || !lastGemini) return
+
+      // Determine cross-feed round number
+      const round = getNextCrossFeedRound(claudeMsgs, chatgptMsgs, geminiMsgs)
+
+      // Build cross-feed messages
+      const crossFeedMessages = buildCrossFeedMessages({
+        claude: lastClaude.content,
+        chatgpt: lastChatgpt.content,
+        gemini: lastGemini.content,
+      })
+
+      const sendOptions = { isCrossFeed: true, crossFeedRound: round }
+
+      // Send to all three concurrently with cross-feed metadata
+      const sendPromises: Promise<boolean>[] = []
+      if (claudeRef.current) {
+        sendPromises.push(
+          claudeRef.current.send(crossFeedMessages.claude, sendOptions),
+        )
+      }
+      if (chatgptRef.current) {
+        sendPromises.push(
+          chatgptRef.current.send(crossFeedMessages.chatgpt, sendOptions),
+        )
+      }
+      if (geminiRef.current) {
+        sendPromises.push(
+          geminiRef.current.send(crossFeedMessages.gemini, sendOptions),
+        )
+      }
+
+      await Promise.allSettled(sendPromises)
+    } catch (err) {
+      console.error('[App] handleCrossFeed failed:', err)
+    }
+  }, [activeConversationId])
 
   const handleSend = useCallback(
     async (text: string) => {
@@ -119,7 +214,12 @@ function App() {
             <ModelColumn ref={geminiRef} provider="gemini" label="Gemini" />
           </div>
 
-          <InputBar onSend={handleSend} isStreaming={isAnyStreaming} />
+          <InputBar
+            onSend={handleSend}
+            onCrossFeed={handleCrossFeed}
+            isStreaming={isAnyStreaming}
+            hasCrossFeedContent={hasCrossFeedContent}
+          />
         </main>
       </div>
     </div>

@@ -17,8 +17,9 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Button } from '@/components/ui/button'
 import { MessageBubble } from '@/components/MessageBubble'
 import { useProviderChat, getMessageText } from '@/hooks/useProviderChat'
+import type { SendOptions } from '@/hooks/useProviderChat'
 import type { Provider } from '@/lib/db/types'
-import { getModelDisplayName } from '@/lib/models'
+import { getModelDisplayName, PROVIDER_COLORS } from '@/lib/models'
 import { cn } from '@/lib/utils'
 import { useAppStore } from '@/lib/store'
 
@@ -29,14 +30,7 @@ interface ModelColumnProps {
 
 /** Handle exposed to the parent for sending messages. */
 export interface ModelColumnHandle {
-  send: (text: string) => Promise<boolean>
-}
-
-/** Provider-specific accent colors for column headers. */
-const PROVIDER_COLORS: Record<Provider, string> = {
-  claude: 'bg-chart-1',
-  chatgpt: 'bg-chart-2',
-  gemini: 'bg-chart-3',
+  send: (text: string, options?: SendOptions) => Promise<boolean>
 }
 
 export const ModelColumn = memo(
@@ -47,12 +41,20 @@ export const ModelColumn = memo(
     const activeConversationId = useAppStore((s) => s.activeConversationId)
     const model = useAppStore((s) => s.selectedModels[provider])
 
-    const { messages, status, error, send, stop, clearError, isLoading } =
-      useProviderChat({
-        provider,
-        conversationId: activeConversationId,
-        model,
-      })
+    const {
+      messages,
+      status,
+      error,
+      send,
+      stop,
+      clearError,
+      isLoading,
+      crossFeedIds,
+    } = useProviderChat({
+      provider,
+      conversationId: activeConversationId,
+      model,
+    })
 
     // Expose send to the parent via ref (isLoading syncs via Zustand store)
     useImperativeHandle(
@@ -126,6 +128,7 @@ export const ModelColumn = memo(
                       role={msg.role as 'user' | 'assistant'}
                       content={getMessageText(msg)}
                       isStreaming={isCurrentlyStreaming}
+                      isCrossFeed={crossFeedIds.has(msg.id)}
                     />
                   )
                 })}

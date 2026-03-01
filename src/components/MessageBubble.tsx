@@ -11,7 +11,7 @@
 import { memo, useCallback, useState } from 'react'
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { CheckIcon, CopyIcon } from 'lucide-react'
+import { ArrowLeftRightIcon, CheckIcon, CopyIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -21,6 +21,8 @@ interface MessageBubbleProps {
   timestamp?: string
   /** Whether this message is currently being streamed (shows pulsing cursor). */
   isStreaming?: boolean
+  /** Whether this message is part of a cross-feed round. */
+  isCrossFeed?: boolean
 }
 
 export const MessageBubble = memo(function MessageBubble({
@@ -28,6 +30,7 @@ export const MessageBubble = memo(function MessageBubble({
   content,
   timestamp,
   isStreaming = false,
+  isCrossFeed = false,
 }: MessageBubbleProps) {
   const [copied, setCopied] = useState(false)
 
@@ -50,8 +53,17 @@ export const MessageBubble = memo(function MessageBubble({
         isUser
           ? 'bg-primary text-primary-foreground self-end'
           : 'bg-card text-card-foreground self-start',
+        isCrossFeed && 'border-muted-foreground/30 border border-dashed',
       )}
     >
+      {/* Cross-feed indicator */}
+      {isCrossFeed && (
+        <div className="text-muted-foreground mb-1 flex items-center gap-1 text-[10px]">
+          <ArrowLeftRightIcon className="h-3 w-3" />
+          <span>Cross-feed</span>
+        </div>
+      )}
+
       {/* Message content */}
       {isUser ? (
         <p className="whitespace-pre-wrap">{content}</p>

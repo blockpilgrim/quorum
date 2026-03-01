@@ -6,7 +6,7 @@
  * while any provider is streaming.
  */
 
-import { SendIcon } from 'lucide-react'
+import { ArrowLeftRightIcon, SendIcon } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { Button } from '@/components/ui/button'
@@ -16,11 +16,20 @@ import { db } from '@/lib/db'
 interface InputBarProps {
   /** Called when the user submits a message. */
   onSend: (text: string) => void
+  /** Called when the user triggers a cross-feed round. */
+  onCrossFeed?: () => void
   /** Whether any provider is currently streaming (disables input). */
   isStreaming?: boolean
+  /** Whether cross-feed is available (all providers have assistant responses). */
+  hasCrossFeedContent?: boolean
 }
 
-export function InputBar({ onSend, isStreaming = false }: InputBarProps) {
+export function InputBar({
+  onSend,
+  onCrossFeed,
+  isStreaming = false,
+  hasCrossFeedContent = false,
+}: InputBarProps) {
   const [value, setValue] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -77,6 +86,16 @@ export function InputBar({ onSend, isStreaming = false }: InputBarProps) {
           disabled={isDisabled}
           className="flex-1"
         />
+        <Button
+          onClick={onCrossFeed}
+          disabled={!hasCrossFeedContent || isStreaming}
+          size="icon"
+          variant="outline"
+          aria-label="Cross-feed responses between models"
+          title="Cross-feed: share each model's response with the others"
+        >
+          <ArrowLeftRightIcon className="h-4 w-4" />
+        </Button>
         <Button
           onClick={handleSend}
           disabled={isDisabled || value.trim() === ''}

@@ -31,6 +31,7 @@ vi.mock('@/hooks/useProviderChat', () => ({
     stop: mockStop,
     clearError: mockClearError,
     isLoading: mockStatus === 'submitted' || mockStatus === 'streaming',
+    crossFeedIds: new Set<string>(),
   }),
   getMessageText: (msg: UIMessage) =>
     msg.parts

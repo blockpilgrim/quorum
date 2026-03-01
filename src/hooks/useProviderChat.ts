@@ -8,7 +8,7 @@
  * - Exposes streaming status and error state for the UI
  */
 
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import type { UIMessage } from 'ai'
@@ -26,6 +26,12 @@ interface UseProviderChatOptions {
   model: string
 }
 
+/** Options for cross-feed metadata when sending a message. */
+export interface SendOptions {
+  isCrossFeed?: boolean
+  crossFeedRound?: number
+}
+
 interface UseProviderChatReturn {
   /** Current messages from `useChat` (includes streaming partials). */
   messages: UIMessage[]
@@ -34,13 +40,15 @@ interface UseProviderChatReturn {
   /** Error from the last request, if any. */
   error: Error | undefined
   /** Send a user message. Returns false if the message cannot be sent. */
-  send: (text: string) => Promise<boolean>
+  send: (text: string, options?: SendOptions) => Promise<boolean>
   /** Stop the current stream. */
   stop: () => void
   /** Clear the error and reset status to ready. */
   clearError: () => void
   /** Whether the provider is actively streaming or waiting for a response. */
   isLoading: boolean
+  /** Set of UIMessage IDs that are cross-feed messages. */
+  crossFeedIds: Set<string>
 }
 
 /**
@@ -59,19 +67,29 @@ export function getMessageText(message: UIMessage): string {
 
 /**
  * Convert Dexie messages to the UIMessage format expected by useChat.
+ * Also returns a set of IDs for cross-feed messages.
  */
 function toUIMessages(
   dbMessages: Array<{
     id?: number
     role: 'user' | 'assistant'
     content: string
+    isCrossFeed?: boolean
   }>,
-): UIMessage[] {
-  return dbMessages.map((msg) => ({
-    id: String(msg.id ?? Math.random()),
-    role: msg.role,
-    parts: [{ type: 'text' as const, text: msg.content }],
-  }))
+): { uiMessages: UIMessage[]; crossFeedIds: Set<string> } {
+  const crossFeedIds = new Set<string>()
+  const uiMessages = dbMessages.map((msg) => {
+    const id = String(msg.id ?? Math.random())
+    if (msg.isCrossFeed) {
+      crossFeedIds.add(id)
+    }
+    return {
+      id,
+      role: msg.role,
+      parts: [{ type: 'text' as const, text: msg.content }],
+    }
+  })
+  return { uiMessages, crossFeedIds }
 }
 
 export function useProviderChat({
@@ -83,8 +101,14 @@ export function useProviderChat({
   // so we only re-seed when it actually changes.
   const seededConversationRef = useRef<number | null>(null)
 
+  // Set of UIMessage IDs that are cross-feed messages, for visual styling.
+  const [crossFeedIds, setCrossFeedIds] = useState<Set<string>>(new Set())
+
   // Track whether we are currently persisting to avoid double-saves.
   const persistingRef = useRef(false)
+
+  // Track cross-feed metadata for the current request so onFinish can use it.
+  const pendingCrossFeedRef = useRef<SendOptions>({})
 
   // Use refs for values needed in the transport's prepareSendMessagesRequest
   // callback to avoid recreating the transport on every render.
@@ -148,15 +172,19 @@ export function useProviderChat({
         try {
           const content = getMessageText(message)
           if (content) {
+            const crossFeedOpts = pendingCrossFeedRef.current
             await addMessage({
               conversationId,
               provider,
               role: 'assistant',
               content,
+              isCrossFeed: crossFeedOpts.isCrossFeed,
+              crossFeedRound: crossFeedOpts.crossFeedRound,
             })
           }
         } finally {
           persistingRef.current = false
+          pendingCrossFeedRef.current = {}
         }
       },
       [conversationId, provider],
@@ -168,6 +196,32 @@ export function useProviderChat({
       [provider],
     ),
   })
+
+  // Track cross-feed IDs for messages created during the current session.
+  // When a cross-feed send is in progress, new messages that appear in the
+  // useChat messages array are added to the crossFeedIds set.
+  const prevMessageIdsRef = useRef<Set<string>>(new Set())
+  useEffect(() => {
+    const currentIds = new Set(messages.map((m) => m.id))
+    if (pendingCrossFeedRef.current.isCrossFeed) {
+      const newIds: string[] = []
+      for (const id of currentIds) {
+        if (!prevMessageIdsRef.current.has(id)) {
+          newIds.push(id)
+        }
+      }
+      if (newIds.length > 0) {
+        setCrossFeedIds((prev) => {
+          const next = new Set(prev)
+          for (const id of newIds) {
+            next.add(id)
+          }
+          return next
+        })
+      }
+    }
+    prevMessageIdsRef.current = currentIds
+  }, [messages])
 
   // Sync streaming status to Zustand store so other components
   // (like InputBar) can react without reading refs during render.
@@ -182,6 +236,7 @@ export function useProviderChat({
     if (conversationId === null) {
       // No active conversation: clear messages
       setMessages([])
+      setCrossFeedIds(new Set())
       seededConversationRef.current = null
       return
     }
@@ -198,7 +253,9 @@ export function useProviderChat({
       try {
         const dbMessages = await getMessagesByThread(conversationId, provider)
         if (cancelled) return
-        setMessages(toUIMessages(dbMessages))
+        const { uiMessages, crossFeedIds: cfIds } = toUIMessages(dbMessages)
+        setMessages(uiMessages)
+        setCrossFeedIds(cfIds)
         seededConversationRef.current = conversationId
       } catch (err) {
         console.error(`[${provider}] Failed to seed messages:`, err)
@@ -214,7 +271,7 @@ export function useProviderChat({
 
   // Send function that also persists the user message to Dexie
   const send = useCallback(
-    async (text: string): Promise<boolean> => {
+    async (text: string, options?: SendOptions): Promise<boolean> => {
       if (conversationId === null) return false
 
       const trimmed = text.trim()
@@ -223,12 +280,17 @@ export function useProviderChat({
       if (status !== 'ready') return false
 
       try {
+        // Store cross-feed metadata so onFinish can use it for the assistant message
+        pendingCrossFeedRef.current = options ?? {}
+
         // Persist user message to Dexie first
         await addMessage({
           conversationId,
           provider,
           role: 'user',
           content: trimmed,
+          isCrossFeed: options?.isCrossFeed,
+          crossFeedRound: options?.crossFeedRound,
         })
 
         // Then send via useChat (which triggers the streaming request)
@@ -236,6 +298,7 @@ export function useProviderChat({
         return true
       } catch (err) {
         console.error(`[${provider}] Failed to send message:`, err)
+        pendingCrossFeedRef.current = {}
         return false
       }
     },
@@ -252,5 +315,6 @@ export function useProviderChat({
     stop,
     clearError,
     isLoading,
+    crossFeedIds,
   }
 }
