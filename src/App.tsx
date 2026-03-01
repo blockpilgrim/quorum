@@ -235,7 +235,10 @@ function App() {
 
   return (
     <div className="bg-background flex h-dvh flex-col">
-      <TopBar onNewConversation={handleNewConversation} />
+      <TopBar
+        onNewConversation={handleNewConversation}
+        onSearchOpen={handleSearchOpen}
+      />
 
       <div className="flex min-h-0 flex-1">
         <ConversationSidebar onNewConversation={handleNewConversation} />

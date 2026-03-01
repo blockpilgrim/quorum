@@ -332,7 +332,7 @@ function ConversationItem({
           }
         }}
         className={cn(
-          'group flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors',
+          'group flex min-h-[44px] items-center gap-2 rounded-md px-2 py-2 text-left text-sm transition-colors sm:min-h-0 sm:py-1.5',
           'hover:bg-accent hover:text-accent-foreground',
           isActive ? 'bg-accent text-accent-foreground' : 'text-foreground',
         )}
@@ -345,7 +345,7 @@ function ConversationItem({
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6"
+            className="h-8 w-8 sm:h-6 sm:w-6"
             onClick={startRename}
             aria-label="Rename conversation"
           >
@@ -354,7 +354,7 @@ function ConversationItem({
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6"
+            className="h-8 w-8 sm:h-6 sm:w-6"
             onClick={handleDeleteClick}
             aria-label="Delete conversation"
           >

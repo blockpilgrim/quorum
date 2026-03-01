@@ -58,7 +58,10 @@ export function SettingsDialog() {
           variant="ghost"
           size="icon"
           aria-label="Settings"
-          className={cn('h-8 w-8', !hasAnyKey && 'text-chart-1 animate-pulse')}
+          className={cn(
+            'h-10 w-10 sm:h-8 sm:w-8',
+            !hasAnyKey && 'text-chart-1 animate-pulse',
+          )}
         >
           <SettingsIcon className="h-4 w-4" />
         </Button>

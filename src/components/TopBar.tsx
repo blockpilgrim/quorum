@@ -1,8 +1,11 @@
 /**
  * Top bar with app title, settings, export, new conversation button, and sidebar toggle.
+ *
+ * Touch targets use min-h/min-w of 44px on mobile for iOS/Android accessibility.
+ * Keyboard shortcut hints shown as tooltips via title attributes.
  */
 
-import { MenuIcon, PlusIcon } from 'lucide-react'
+import { MenuIcon, PlusIcon, SearchIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ExportMenu } from '@/components/ExportMenu'
 import { SettingsDialog } from '@/components/SettingsDialog'
@@ -11,19 +14,23 @@ import { useAppStore } from '@/lib/store'
 
 interface TopBarProps {
   onNewConversation: () => void
+  onSearchOpen?: () => void
 }
 
-export function TopBar({ onNewConversation }: TopBarProps) {
+export function TopBar({ onNewConversation, onSearchOpen }: TopBarProps) {
   const toggleSidebar = useAppStore((s) => s.toggleSidebar)
 
   return (
-    <header className="border-border bg-background flex h-12 shrink-0 items-center gap-2 border-b px-4">
+    <header
+      className="border-border bg-background flex h-12 shrink-0 items-center gap-1 border-b px-2 sm:gap-2 sm:px-4"
+      role="banner"
+    >
       <Button
         variant="ghost"
         size="icon"
         onClick={toggleSidebar}
         aria-label="Toggle sidebar"
-        className="h-8 w-8"
+        className="h-10 w-10 sm:h-8 sm:w-8"
       >
         <MenuIcon className="h-4 w-4" />
       </Button>
@@ -33,6 +40,19 @@ export function TopBar({ onNewConversation }: TopBarProps) {
       </h1>
 
       <div className="flex-1" />
+
+      {onSearchOpen && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onSearchOpen}
+          aria-label="Search conversations"
+          title="Search conversations (Ctrl+K)"
+          className="h-10 w-10 sm:h-8 sm:w-8"
+        >
+          <SearchIcon className="h-4 w-4" />
+        </Button>
+      )}
 
       <ExportMenu />
 
@@ -45,7 +65,8 @@ export function TopBar({ onNewConversation }: TopBarProps) {
         size="icon"
         onClick={onNewConversation}
         aria-label="New conversation"
-        className="h-8 w-8"
+        title="New conversation (Ctrl+N)"
+        className="h-10 w-10 sm:h-8 sm:w-8"
       >
         <PlusIcon className="h-4 w-4" />
       </Button>

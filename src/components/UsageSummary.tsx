@@ -178,7 +178,7 @@ export function UsageSummary() {
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className="h-10 w-10 sm:h-8 sm:w-8"
           aria-label="Token usage"
         >
           <BarChart3Icon className="h-4 w-4" />

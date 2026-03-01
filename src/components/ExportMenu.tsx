@@ -126,7 +126,7 @@ export function ExportMenu() {
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className="h-10 w-10 sm:h-8 sm:w-8"
           aria-label="Export conversations"
           aria-busy={isExporting}
           disabled={isExporting}

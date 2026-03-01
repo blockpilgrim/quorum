@@ -79,7 +79,7 @@ export function InputBar({
   )
 
   return (
-    <div className="border-border bg-background shrink-0 border-t px-4 py-3">
+    <div className="border-border bg-background shrink-0 border-t px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       <div className="flex items-end gap-2">
         <textarea
           ref={textareaRef}
