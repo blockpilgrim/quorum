@@ -40,6 +40,7 @@ import { db, deleteConversation, updateConversation } from '@/lib/db'
 import type { Conversation } from '@/lib/db/types'
 import { useAppStore } from '@/lib/store'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useIsMobile } from '@/hooks/useIsMobile'
 import { cn } from '@/lib/utils'
 
 interface ConversationSidebarProps {
@@ -51,6 +52,7 @@ export function ConversationSidebar({
 }: ConversationSidebarProps) {
   const sidebarOpen = useAppStore((s) => s.sidebarOpen)
   const setSidebarOpen = useAppStore((s) => s.setSidebarOpen)
+  const isMobile = useIsMobile()
 
   const handleCloseSheet = useCallback(
     () => setSidebarOpen(false),
@@ -69,8 +71,8 @@ export function ConversationSidebar({
         </aside>
       )}
 
-      {/* Mobile: Sheet overlay -- closes on interaction */}
-      <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+      {/* Mobile: Sheet overlay -- only active below md breakpoint */}
+      <Sheet open={sidebarOpen && isMobile} onOpenChange={setSidebarOpen}>
         <SheetContent
           side="left"
           className="w-72 p-0 md:hidden"
