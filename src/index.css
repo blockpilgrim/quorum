@@ -56,6 +56,24 @@
   }
 }
 
+/* Smooth fade-in for conversation content transitions. */
+@layer utilities {
+  .conversation-fade-in {
+    animation: conversationFadeIn 200ms ease-out;
+  }
+}
+
+@keyframes conversationFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* Minimal prose styling for markdown-rendered assistant messages.
    Replaces @tailwindcss/typography which is not yet Tailwind v4 compatible. */
 @layer components {

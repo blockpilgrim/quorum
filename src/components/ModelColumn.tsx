@@ -104,9 +104,12 @@ export const ModelColumn = memo(
           )}
         </div>
 
-        {/* Message area */}
+        {/* Message area -- fade in on conversation switch */}
         <ScrollArea className="flex-1">
-          <div className="flex flex-col gap-2 p-3">
+          <div
+            key={activeConversationId ?? 'none'}
+            className="conversation-fade-in flex flex-col gap-2 p-3"
+          >
             {messages.length === 0 && !error ? (
               <EmptyState
                 text={

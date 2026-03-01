@@ -189,6 +189,11 @@ function App() {
 
   const handleSend = useCallback(
     async (text: string) => {
+      // Request deduplication: prevent sending while any provider is streaming.
+      // The UI already disables the input, but this guards against programmatic calls.
+      const { streamingStatus: ss } = useAppStore.getState()
+      if (ss.claude || ss.chatgpt || ss.gemini) return
+
       try {
         let conversationId = activeConversationId
 
@@ -245,7 +250,8 @@ function App() {
 
         {/* Main content area */}
         <main className="flex min-h-0 min-w-0 flex-1 flex-col">
-          {/* Model columns: 3-column grid on desktop, stacked on mobile */}
+          {/* Model columns: 3-column grid on desktop, stacked on mobile.
+              animate-in with fade on conversation switch via key. */}
           <div className="flex min-h-0 flex-1 flex-col md:flex-row">
             <ModelColumn ref={claudeRef} provider="claude" label="Claude" />
             <ModelColumn
