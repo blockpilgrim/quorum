@@ -6,6 +6,7 @@
  */
 
 import type { TokenCount } from '@/lib/db/types'
+import { OPENROUTER_MODEL_MAP } from '@/lib/models'
 
 // ---------------------------------------------------------------------------
 // Pricing Table
@@ -20,26 +21,33 @@ export interface ModelPricing {
 }
 
 /**
- * Pricing per model ID. Prices are approximate and may change.
+ * Base pricing per model ID. Prices are approximate and may change.
  * Last updated: 2026-03-01.
+ *
+ * OpenRouter model ID aliases are derived automatically from OPENROUTER_MODEL_MAP
+ * so that price changes only need to be made in one place.
  */
-export const MODEL_PRICING: Record<string, ModelPricing> = {
-  // Claude (direct API IDs)
+const BASE_PRICING: Record<string, ModelPricing> = {
+  // Claude
   'claude-sonnet-4-6': { inputPer1M: 3, outputPer1M: 15 },
   'claude-opus-4-6': { inputPer1M: 5, outputPer1M: 25 },
-  // Claude (OpenRouter IDs)
-  'anthropic/claude-sonnet-4-6': { inputPer1M: 3, outputPer1M: 15 },
-  'anthropic/claude-opus-4-6': { inputPer1M: 5, outputPer1M: 25 },
 
-  // OpenAI (direct API IDs)
+  // OpenAI
   'gpt-5.2': { inputPer1M: 1.75, outputPer1M: 14 },
   'gpt-5.3-codex': { inputPer1M: 1.75, outputPer1M: 14 },
-  // OpenAI (OpenRouter IDs)
-  'openai/gpt-5.2': { inputPer1M: 1.75, outputPer1M: 14 },
-  'openai/gpt-5.3-codex': { inputPer1M: 1.75, outputPer1M: 14 },
 
-  // Gemini (same ID in both direct and OpenRouter)
+  // Gemini
   'google/gemini-3.1-pro-preview': { inputPer1M: 1.25, outputPer1M: 10 },
+}
+
+/** Full pricing table with OpenRouter model ID aliases derived automatically. */
+export const MODEL_PRICING: Record<string, ModelPricing> = {
+  ...BASE_PRICING,
+  ...Object.fromEntries(
+    Object.entries(OPENROUTER_MODEL_MAP)
+      .filter(([directId, orId]) => directId !== orId && BASE_PRICING[directId])
+      .map(([directId, orId]) => [orId, BASE_PRICING[directId]]),
+  ),
 }
 
 // ---------------------------------------------------------------------------

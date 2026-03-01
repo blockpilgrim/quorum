@@ -16,18 +16,6 @@ vi.mock('ai', () => ({
   streamText: (...args: unknown[]) => mockStreamText(...args),
 }))
 
-const mockAnthropicModel = vi.fn()
-const mockCreateAnthropic = vi.fn(() => mockAnthropicModel)
-vi.mock('@ai-sdk/anthropic', () => ({
-  createAnthropic: (...args: unknown[]) => mockCreateAnthropic(...args),
-}))
-
-const mockOpenAIModel = vi.fn()
-const mockCreateOpenAI = vi.fn(() => mockOpenAIModel)
-vi.mock('@ai-sdk/openai', () => ({
-  createOpenAI: (...args: unknown[]) => mockCreateOpenAI(...args),
-}))
-
 const mockOpenRouterModel = vi.fn()
 const mockCreateOpenRouter = vi.fn(() => mockOpenRouterModel)
 vi.mock('@openrouter/ai-sdk-provider', () => ({
@@ -97,8 +85,6 @@ function setupStreamTextSuccess(responseBody = 'Hello from AI') {
 
 beforeEach(() => {
   vi.clearAllMocks()
-  mockAnthropicModel.mockReturnValue('anthropic-model-instance')
-  mockOpenAIModel.mockReturnValue('openai-model-instance')
   mockOpenRouterModel.mockReturnValue('openrouter-model-instance')
 })
 
@@ -209,17 +195,6 @@ describe('provider routing (all via OpenRouter)', () => {
     )
   })
 
-  it('does not call Anthropic or OpenAI direct API factories', async () => {
-    setupStreamTextSuccess()
-    const context = createMockContext(
-      validBody({ provider: 'claude', model: 'anthropic/claude-sonnet-4-6' }),
-    )
-    await onRequestPost(
-      context as unknown as Parameters<typeof onRequestPost>[0],
-    )
-    expect(mockCreateAnthropic).not.toHaveBeenCalled()
-    expect(mockCreateOpenAI).not.toHaveBeenCalled()
-  })
 })
 
 describe('successful streaming', () => {
@@ -398,8 +373,6 @@ describe('providerOptions (thinking/reasoning)', () => {
       ['gemini', 'google/gemini-3.1-pro-preview'],
     ] as const) {
       vi.clearAllMocks()
-      mockAnthropicModel.mockReturnValue('anthropic-model-instance')
-      mockOpenAIModel.mockReturnValue('openai-model-instance')
       mockOpenRouterModel.mockReturnValue('openrouter-model-instance')
 
       const args = await captureStreamTextArgs(provider, model)

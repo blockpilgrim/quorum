@@ -80,7 +80,7 @@ describe('Tri-model dispatch (Phase 6)', () => {
    * type a message, and submit it.
    */
   async function sendMessage(text: string) {
-    await updateSettings({ apiKeys: { claude: 'sk-test' } })
+    await updateSettings({ apiKeys: { openrouter: 'sk-test' } })
     const user = userEvent.setup()
     render(<App />)
 

@@ -5,9 +5,11 @@
 import {
   MODEL_OPTIONS,
   MODEL_DISPLAY_NAMES,
+  OPENROUTER_MODEL_MAP,
   PROVIDER_LABELS,
   PROVIDERS,
   getModelDisplayName,
+  toOpenRouterModelId,
 } from '@/lib/models'
 
 describe('MODEL_OPTIONS', () => {
@@ -142,6 +144,41 @@ describe('getModelDisplayName', () => {
     for (const models of Object.values(MODEL_OPTIONS)) {
       for (const model of models) {
         expect(getModelDisplayName(model.id)).toBe(model.label)
+      }
+    }
+  })
+})
+
+describe('toOpenRouterModelId', () => {
+  it('maps Claude model IDs to OpenRouter format', () => {
+    expect(toOpenRouterModelId('claude-sonnet-4-6')).toBe(
+      'anthropic/claude-sonnet-4-6',
+    )
+    expect(toOpenRouterModelId('claude-opus-4-6')).toBe(
+      'anthropic/claude-opus-4-6',
+    )
+  })
+
+  it('maps OpenAI model IDs to OpenRouter format', () => {
+    expect(toOpenRouterModelId('gpt-5.2')).toBe('openai/gpt-5.2')
+    expect(toOpenRouterModelId('gpt-5.3-codex')).toBe('openai/gpt-5.3-codex')
+  })
+
+  it('passes through Gemini IDs unchanged (already OpenRouter format)', () => {
+    expect(toOpenRouterModelId('google/gemini-3.1-pro-preview')).toBe(
+      'google/gemini-3.1-pro-preview',
+    )
+  })
+
+  it('returns unknown model IDs unchanged (fallback)', () => {
+    expect(toOpenRouterModelId('some-future-model')).toBe('some-future-model')
+    expect(toOpenRouterModelId('')).toBe('')
+  })
+
+  it('has a mapping for every model in MODEL_OPTIONS', () => {
+    for (const provider of PROVIDERS) {
+      for (const model of MODEL_OPTIONS[provider]) {
+        expect(OPENROUTER_MODEL_MAP[model.id]).toBeDefined()
       }
     }
   })

@@ -36,14 +36,14 @@ describe('InputBar', () => {
     await waitFor(() => {
       expect(
         screen.getByPlaceholderText(
-          'Configure API keys in settings to start...',
+          'Configure your OpenRouter API key in settings to start...',
         ),
       ).toBeDisabled()
     })
   })
 
   it('is enabled when API keys are present', async () => {
-    await updateSettings({ apiKeys: { claude: 'sk-test-key-123' } })
+    await updateSettings({ apiKeys: { openrouter: 'sk-test-key-123' } })
     render(<InputBar onSend={mockOnSend} />)
     await waitFor(() => {
       expect(
@@ -53,7 +53,7 @@ describe('InputBar', () => {
   })
 
   it('clears input and calls onSend on submit', async () => {
-    await updateSettings({ apiKeys: { claude: 'sk-test-key-123' } })
+    await updateSettings({ apiKeys: { openrouter: 'sk-test-key-123' } })
     const user = userEvent.setup()
     render(<InputBar onSend={mockOnSend} />)
 
@@ -70,7 +70,7 @@ describe('InputBar', () => {
   })
 
   it('shows streaming placeholder when isStreaming is true', async () => {
-    await updateSettings({ apiKeys: { claude: 'sk-test-key-123' } })
+    await updateSettings({ apiKeys: { openrouter: 'sk-test-key-123' } })
     render(<InputBar onSend={mockOnSend} isStreaming />)
     await waitFor(() => {
       expect(
@@ -80,7 +80,7 @@ describe('InputBar', () => {
   })
 
   it('does not call onSend for empty input', async () => {
-    await updateSettings({ apiKeys: { claude: 'sk-test-key-123' } })
+    await updateSettings({ apiKeys: { openrouter: 'sk-test-key-123' } })
     const user = userEvent.setup()
     render(<InputBar onSend={mockOnSend} />)
 
@@ -97,7 +97,7 @@ describe('InputBar', () => {
 
   describe('textarea behavior', () => {
     it('renders a textarea element', async () => {
-      await updateSettings({ apiKeys: { claude: 'sk-test-key-123' } })
+      await updateSettings({ apiKeys: { openrouter: 'sk-test-key-123' } })
       render(<InputBar onSend={mockOnSend} />)
       await waitFor(() => {
         expect(
@@ -109,7 +109,7 @@ describe('InputBar', () => {
     })
 
     it('does not send on Shift+Enter (allows newline)', async () => {
-      await updateSettings({ apiKeys: { claude: 'sk-test-key-123' } })
+      await updateSettings({ apiKeys: { openrouter: 'sk-test-key-123' } })
       const user = userEvent.setup()
       render(<InputBar onSend={mockOnSend} />)
 
@@ -129,7 +129,7 @@ describe('InputBar', () => {
     })
 
     it('sends on bare Enter (no Shift)', async () => {
-      await updateSettings({ apiKeys: { claude: 'sk-test-key-123' } })
+      await updateSettings({ apiKeys: { openrouter: 'sk-test-key-123' } })
       const user = userEvent.setup()
       render(<InputBar onSend={mockOnSend} />)
 
@@ -147,7 +147,7 @@ describe('InputBar', () => {
     })
 
     it('sends multiline content on Enter after Shift+Enter', async () => {
-      await updateSettings({ apiKeys: { claude: 'sk-test-key-123' } })
+      await updateSettings({ apiKeys: { openrouter: 'sk-test-key-123' } })
       const user = userEvent.setup()
       render(<InputBar onSend={mockOnSend} />)
 
@@ -166,7 +166,7 @@ describe('InputBar', () => {
     })
 
     it('does not send when Enter is pressed on empty textarea', async () => {
-      await updateSettings({ apiKeys: { claude: 'sk-test-key-123' } })
+      await updateSettings({ apiKeys: { openrouter: 'sk-test-key-123' } })
       render(<InputBar onSend={mockOnSend} />)
 
       await waitFor(() => {
@@ -184,7 +184,7 @@ describe('InputBar', () => {
 
   describe('cross-feed button', () => {
     it('renders with the correct aria-label', async () => {
-      await updateSettings({ apiKeys: { claude: 'sk-test-key-123' } })
+      await updateSettings({ apiKeys: { openrouter: 'sk-test-key-123' } })
       render(
         <InputBar
           onSend={mockOnSend}
@@ -202,7 +202,7 @@ describe('InputBar', () => {
     })
 
     it('is disabled when hasCrossFeedContent is false', async () => {
-      await updateSettings({ apiKeys: { claude: 'sk-test-key-123' } })
+      await updateSettings({ apiKeys: { openrouter: 'sk-test-key-123' } })
       render(
         <InputBar
           onSend={mockOnSend}
@@ -220,7 +220,7 @@ describe('InputBar', () => {
     })
 
     it('is disabled when hasCrossFeedContent is omitted (defaults to false)', async () => {
-      await updateSettings({ apiKeys: { claude: 'sk-test-key-123' } })
+      await updateSettings({ apiKeys: { openrouter: 'sk-test-key-123' } })
       render(<InputBar onSend={mockOnSend} onCrossFeed={mockOnCrossFeed} />)
       await waitFor(() => {
         expect(
@@ -232,7 +232,7 @@ describe('InputBar', () => {
     })
 
     it('is disabled when isStreaming is true even if hasCrossFeedContent is true', async () => {
-      await updateSettings({ apiKeys: { claude: 'sk-test-key-123' } })
+      await updateSettings({ apiKeys: { openrouter: 'sk-test-key-123' } })
       render(
         <InputBar
           onSend={mockOnSend}
@@ -251,7 +251,7 @@ describe('InputBar', () => {
     })
 
     it('is enabled when hasCrossFeedContent is true and not streaming', async () => {
-      await updateSettings({ apiKeys: { claude: 'sk-test-key-123' } })
+      await updateSettings({ apiKeys: { openrouter: 'sk-test-key-123' } })
       render(
         <InputBar
           onSend={mockOnSend}
@@ -269,7 +269,7 @@ describe('InputBar', () => {
     })
 
     it('calls onCrossFeed when clicked', async () => {
-      await updateSettings({ apiKeys: { claude: 'sk-test-key-123' } })
+      await updateSettings({ apiKeys: { openrouter: 'sk-test-key-123' } })
       const user = userEvent.setup()
       render(
         <InputBar
@@ -295,7 +295,7 @@ describe('InputBar', () => {
     })
 
     it('does not call onCrossFeed when button is disabled', async () => {
-      await updateSettings({ apiKeys: { claude: 'sk-test-key-123' } })
+      await updateSettings({ apiKeys: { openrouter: 'sk-test-key-123' } })
       render(
         <InputBar
           onSend={mockOnSend}

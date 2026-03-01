@@ -35,14 +35,12 @@ export function InputBar({
   const [value, setValue] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  // Check if any API keys are configured
+  // Check if the OpenRouter API key is configured
   const settings = useLiveQuery(() => db.settings.get(1), [])
   const hasApiKeys =
     settings !== undefined &&
     settings !== null &&
-    (settings.apiKeys.claude !== '' ||
-      settings.apiKeys.chatgpt !== '' ||
-      settings.apiKeys.gemini !== '')
+    settings.apiKeys.openrouter !== ''
 
   const isDisabled = !hasApiKeys || isStreaming
 
@@ -90,7 +88,7 @@ export function InputBar({
           onKeyDown={handleKeyDown}
           placeholder={
             !hasApiKeys
-              ? 'Configure API keys in settings to start...'
+              ? 'Configure your OpenRouter API key in settings to start...'
               : isStreaming
                 ? 'Waiting for response...'
                 : 'Ask all three models...'

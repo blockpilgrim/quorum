@@ -1,17 +1,14 @@
 /**
  * Cloudflare Pages Function: POST /api/chat
  *
- * Stateless proxy that forwards chat requests to AI providers (Anthropic,
- * OpenAI, OpenRouter for Gemini) using the Vercel AI SDK. Streams responses
- * back to the SPA with CORS headers.
+ * Stateless proxy that forwards chat requests to AI providers via OpenRouter
+ * using the Vercel AI SDK. Streams responses back to the SPA with CORS headers.
  *
  * Request body: { provider, model, messages, apiKey }
  * Response: UI message stream (SSE) compatible with @ai-sdk/react useChat
  */
 
 import { streamText } from 'ai'
-import { createAnthropic } from '@ai-sdk/anthropic'
-import { createOpenAI } from '@ai-sdk/openai'
 import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 
 // ---------------------------------------------------------------------------
@@ -257,20 +254,11 @@ function validateRequestBody(
  * All providers use OpenRouter by default — one API key gives access to
  * Claude, ChatGPT, and Gemini. The model ID should already be in
  * OpenRouter format (e.g., 'anthropic/claude-sonnet-4-6').
- *
- * Direct API adapters (@ai-sdk/anthropic, @ai-sdk/openai) are kept as
- * imports for a future feature where users can choose between direct API
- * and OpenRouter per provider.
  */
 function createModel(_provider: Provider, model: string, apiKey: string) {
   const openrouter = createOpenRouter({ apiKey })
   return openrouter(model)
 }
-
-// Keep direct API adapter imports referenced so tree-shaking doesn't remove them.
-// These will be used in a future feature for per-provider API routing choice.
-void createAnthropic
-void createOpenAI
 
 /**
  * Provider-specific options to enable thinking/reasoning for each provider.
