@@ -292,6 +292,25 @@ const PROVIDER_OPTIONS = {
   },
 } as const satisfies Record<Provider, Record<string, Record<string, unknown>>>
 
+/**
+ * Maximum output tokens per provider.
+ *
+ * Without an explicit limit, OpenRouter uses a modest model default (often
+ * ~4 096) which is easily exhausted during verbose cross-feed rounds.
+ *
+ * - Claude / Gemini: output tokens are independent of thinking/reasoning
+ *   tokens, so 16 384 is purely for the visible response.
+ * - ChatGPT: OpenAI's API shares the completion budget between reasoning and
+ *   output tokens.  With `xhigh` effort, reasoning can consume the majority
+ *   of the budget — so we request a much larger ceiling to ensure enough
+ *   headroom for the visible response.
+ */
+const MAX_OUTPUT_TOKENS: Record<Provider, number> = {
+  claude: 16_384,
+  chatgpt: 65_536,
+  gemini: 16_384,
+}
+
 // ---------------------------------------------------------------------------
 // Stream Keep-Alive
 // ---------------------------------------------------------------------------
@@ -437,6 +456,7 @@ export const onRequestPost: PagesFunction = async (context) => {
     const result = streamText({
       model: languageModel,
       messages,
+      maxOutputTokens: MAX_OUTPUT_TOKENS[provider],
       providerOptions: PROVIDER_OPTIONS[provider],
       abortSignal: AbortSignal.timeout(STREAM_TIMEOUT_MS),
     })

@@ -375,6 +375,7 @@ describe('providerOptions (thinking/reasoning)', () => {
   type StreamTextArgs = {
     model: unknown
     messages: unknown
+    maxOutputTokens?: number
     providerOptions?: Record<string, unknown>
   }
 
@@ -442,6 +443,27 @@ describe('providerOptions (thinking/reasoning)', () => {
         `openrouter key missing in providerOptions for ${provider}`,
       ).toBeDefined()
     }
+  })
+
+  it('sets maxOutputTokens for claude to 16384', async () => {
+    const args = await captureStreamTextArgs(
+      'claude',
+      'anthropic/claude-opus-4-6',
+    )
+    expect(args.maxOutputTokens).toBe(16_384)
+  })
+
+  it('sets maxOutputTokens for chatgpt to 65536 (headroom for reasoning)', async () => {
+    const args = await captureStreamTextArgs('chatgpt', 'openai/gpt-5.4')
+    expect(args.maxOutputTokens).toBe(65_536)
+  })
+
+  it('sets maxOutputTokens for gemini to 16384', async () => {
+    const args = await captureStreamTextArgs(
+      'gemini',
+      'google/gemini-3.1-pro-preview',
+    )
+    expect(args.maxOutputTokens).toBe(16_384)
   })
 })
 
