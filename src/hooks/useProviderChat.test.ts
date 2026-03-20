@@ -875,6 +875,285 @@ describe('useProviderChat', () => {
       expect(result.current.error).toBeUndefined()
       expect(mockStop).not.toHaveBeenCalled()
     })
+
+    it('watchdog persists when status transitions from submitted to streaming without content', () => {
+      // Start in submitted state — watchdog timer begins
+      mockStatus = 'submitted'
+      const { result, rerender } = renderHook(() =>
+        useProviderChat({
+          provider: 'claude',
+          conversationId: 1,
+          model: 'claude-sonnet-4-6',
+        }),
+      )
+
+      // Advance partway through the timeout
+      act(() => {
+        vi.advanceTimersByTime(60_000)
+      })
+
+      // Transition to streaming without any assistant text content
+      // (simulates SSE keep-alive comments transitioning status)
+      mockStatus = 'streaming'
+      // No assistant messages with text — mockMessages stays empty
+      act(() => {
+        rerender()
+      })
+
+      // No error yet
+      expect(result.current.error).toBeUndefined()
+
+      // Advance the remaining time to hit the 120s total from when
+      // 'submitted' first started
+      act(() => {
+        vi.advanceTimersByTime(60_000)
+      })
+
+      // Watchdog should have fired — error set and stop called
+      expect(result.current.error).toBeDefined()
+      expect(result.current.error!.message).toContain('timed out')
+      expect(mockStop).toHaveBeenCalled()
+    })
+
+    it('watchdog clears when assistant text content arrives during streaming', () => {
+      // Start in submitted state — watchdog timer begins
+      mockStatus = 'submitted'
+      const { result, rerender } = renderHook(() =>
+        useProviderChat({
+          provider: 'claude',
+          conversationId: 1,
+          model: 'claude-sonnet-4-6',
+        }),
+      )
+
+      // Transition to streaming AND add an assistant message with text
+      mockStatus = 'streaming'
+      mockMessages = [
+        {
+          id: 'assistant-1',
+          role: 'assistant',
+          parts: [{ type: 'text', text: 'Hello from the model' }],
+        },
+      ]
+      act(() => {
+        rerender()
+      })
+
+      // Advance well past the 120s timeout
+      act(() => {
+        vi.advanceTimersByTime(150_000)
+      })
+
+      // No error should be set — watchdog was cancelled by content arrival
+      expect(result.current.error).toBeUndefined()
+      expect(mockStop).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('silent stream completion detection', () => {
+    beforeEach(() => {
+      vi.useFakeTimers()
+    })
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('sets error when stream transitions from submitted to ready without response', () => {
+      // Start in submitted state with a user message (so messages.length > 0)
+      mockStatus = 'submitted'
+      mockMessages = [
+        {
+          id: 'user-1',
+          role: 'user',
+          parts: [{ type: 'text', text: 'Hello' }],
+        },
+      ]
+      const { result, rerender } = renderHook(() =>
+        useProviderChat({
+          provider: 'claude',
+          conversationId: 1,
+          model: 'claude-sonnet-4-6',
+        }),
+      )
+
+      // Transition to ready with no assistant message — only the user message exists
+      mockStatus = 'ready'
+      act(() => {
+        rerender()
+      })
+
+      // No error yet — the 200ms delay hasn't elapsed
+      expect(result.current.error).toBeUndefined()
+
+      // Advance past the 200ms delay
+      act(() => {
+        vi.advanceTimersByTime(200)
+      })
+
+      // Error should now be set
+      expect(result.current.error).toBeDefined()
+      expect(result.current.error!.message).toContain('No response received')
+    })
+
+    it('sets error when stream transitions from streaming to ready without response', () => {
+      // Start in submitted state with a user message so prevStatusRef gets set
+      mockStatus = 'submitted'
+      mockMessages = [
+        {
+          id: 'user-1',
+          role: 'user',
+          parts: [{ type: 'text', text: 'Hello' }],
+        },
+      ]
+      const { result, rerender } = renderHook(() =>
+        useProviderChat({
+          provider: 'claude',
+          conversationId: 1,
+          model: 'claude-sonnet-4-6',
+        }),
+      )
+
+      // Transition to streaming (prevStatusRef becomes 'submitted')
+      mockStatus = 'streaming'
+      act(() => {
+        rerender()
+      })
+
+      // Transition to ready with no assistant message (prevStatusRef is now 'streaming')
+      mockStatus = 'ready'
+      act(() => {
+        rerender()
+      })
+
+      // Advance past the 200ms delay
+      act(() => {
+        vi.advanceTimersByTime(200)
+      })
+
+      // Error should be set
+      expect(result.current.error).toBeDefined()
+      expect(result.current.error!.message).toContain('No response received')
+    })
+
+    it('does not set error when stream completes with an assistant response', () => {
+      // Start in submitted state
+      mockStatus = 'submitted'
+      const { result, rerender } = renderHook(() =>
+        useProviderChat({
+          provider: 'claude',
+          conversationId: 1,
+          model: 'claude-sonnet-4-6',
+        }),
+      )
+
+      // Transition to streaming with an assistant message
+      mockStatus = 'streaming'
+      mockMessages = [
+        {
+          id: 'msg-1',
+          role: 'assistant',
+          parts: [{ type: 'text', text: 'Here is a real response' }],
+        },
+      ]
+      act(() => {
+        rerender()
+      })
+
+      // Transition to ready — the assistant message is present
+      mockStatus = 'ready'
+      act(() => {
+        rerender()
+      })
+
+      // Advance past the 200ms delay
+      act(() => {
+        vi.advanceTimersByTime(200)
+      })
+
+      // No error — the stream completed with content
+      expect(result.current.error).toBeUndefined()
+    })
+
+    it('does not set error when transitioning to ready from an initial state', () => {
+      // Start directly in ready state (initial mount, not a transition from loading)
+      mockStatus = 'ready'
+      const { result, rerender } = renderHook(() =>
+        useProviderChat({
+          provider: 'claude',
+          conversationId: 1,
+          model: 'claude-sonnet-4-6',
+        }),
+      )
+
+      // Rerender still in ready (should not trigger the detection)
+      act(() => {
+        rerender()
+      })
+
+      // Advance past the 200ms delay
+      act(() => {
+        vi.advanceTimersByTime(200)
+      })
+
+      // No error — prevStatus was 'ready', not a loading state
+      expect(result.current.error).toBeUndefined()
+    })
+  })
+
+  describe('empty response detection in onFinish', () => {
+    it('sets error when onFinish fires with empty text content', async () => {
+      const { result } = renderHook(() =>
+        useProviderChat({
+          provider: 'claude',
+          conversationId: 1,
+          model: 'claude-sonnet-4-6',
+        }),
+      )
+
+      expect(capturedOnFinish).toBeDefined()
+
+      // Call onFinish with a message that has no text parts
+      await act(async () => {
+        await capturedOnFinish!({
+          message: {
+            id: 'msg-empty',
+            role: 'assistant',
+            parts: [],
+          },
+        })
+      })
+
+      // Error should be set about empty response
+      expect(result.current.error).toBeDefined()
+      expect(result.current.error!.message).toContain('empty response')
+    })
+
+    it('does not set error when onFinish fires with text content', async () => {
+      const { result } = renderHook(() =>
+        useProviderChat({
+          provider: 'claude',
+          conversationId: 1,
+          model: 'claude-sonnet-4-6',
+        }),
+      )
+
+      expect(capturedOnFinish).toBeDefined()
+
+      // Call onFinish with a message that has text
+      await act(async () => {
+        await capturedOnFinish!({
+          message: {
+            id: 'msg-with-text',
+            role: 'assistant',
+            parts: [{ type: 'text', text: 'A proper response' }],
+          },
+        })
+      })
+
+      // No error about empty response
+      expect(result.current.error).toBeUndefined()
+    })
   })
 
   describe('error merging and clearError', () => {

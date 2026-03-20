@@ -134,6 +134,13 @@ export function useProviderChat({
   // Track cross-feed metadata for the current request so onFinish can use it.
   const pendingCrossFeedRef = useRef<SendOptions>({})
 
+  // Refs for request timeout detection.
+  // watchdogRef: timer that starts on 'submitted', persists through 'streaming',
+  // only clears when text content arrives or the request completes.
+  const watchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const hasTextContentRef = useRef(false)
+  const prevStatusRef = useRef<string>('ready')
+
   // Use refs for values needed in the transport's prepareSendMessagesRequest
   // callback to avoid recreating the transport on every render.
   const providerRef = useRef(provider)
@@ -245,6 +252,14 @@ export function useProviderChat({
                 return next
               })
             }
+          } else {
+            // Model responded but produced no visible text — reasoning may
+            // have consumed the entire token budget.
+            setLocalError(
+              new Error(
+                'The model returned an empty response — it may have used all available tokens for reasoning. Please try again with a simpler prompt.',
+              ),
+            )
           }
         } finally {
           persistingRef.current = false
@@ -260,6 +275,12 @@ export function useProviderChat({
       [provider],
     ),
   })
+
+  // Refs for stable access in timeout callbacks (avoid stale closures).
+  const stopRef = useRef(stop)
+  stopRef.current = stop
+  const messagesRef = useRef(messages)
+  messagesRef.current = messages
 
   // Track cross-feed IDs for messages created during the current session.
   // When a cross-feed send is in progress, new messages that appear in the
@@ -295,25 +316,96 @@ export function useProviderChat({
     setStreamingStatus(provider, isActive)
   }, [status, provider, setStreamingStatus])
 
-  // Timeout watchdog: if we stay in 'submitted' state (waiting for first
-  // token) for too long, the connection was likely silently dropped by
-  // infrastructure (Cloudflare idle timeout, network proxy, etc.).
-  // Abort the request and surface a user-visible error.
+  // Timeout watchdog: starts when status enters 'submitted' and persists
+  // through 'streaming' transitions. This is critical because SSE keep-alive
+  // comments from the proxy can transition the status to 'streaming' even
+  // though no real content has arrived — the old submitted-only watchdog
+  // was defeated by this. The watchdog only clears when actual text content
+  // arrives or the request reaches a terminal state.
   useEffect(() => {
-    if (status !== 'submitted') return
+    if (status === 'submitted') {
+      // New request starting — reset content tracking and start watchdog
+      hasTextContentRef.current = false
+      if (watchdogRef.current) clearTimeout(watchdogRef.current)
 
+      watchdogRef.current = setTimeout(() => {
+        watchdogRef.current = null
+        if (!hasTextContentRef.current) {
+          console.warn(
+            `[${provider}] Request timed out — no content received after ${SUBMITTED_TIMEOUT_MS}ms`,
+          )
+          stopRef.current()
+          setLocalError(
+            new Error(
+              'No response received — the model may have timed out during reasoning. Please try again.',
+            ),
+          )
+        }
+      }, SUBMITTED_TIMEOUT_MS)
+    } else if (status === 'ready' || status === 'error') {
+      // Request completed — clear watchdog
+      if (watchdogRef.current) {
+        clearTimeout(watchdogRef.current)
+        watchdogRef.current = null
+      }
+    }
+    // 'streaming' intentionally does NOT clear the watchdog — the timer
+    // persists until text content arrives or the request completes.
+  }, [status, provider])
+
+  // Cancel watchdog when actual text content is received during streaming.
+  useEffect(() => {
+    if (hasTextContentRef.current || status !== 'streaming') return
+    const lastMsg = messages[messages.length - 1]
+    if (lastMsg?.role === 'assistant' && getMessageText(lastMsg)) {
+      hasTextContentRef.current = true
+      if (watchdogRef.current) {
+        clearTimeout(watchdogRef.current)
+        watchdogRef.current = null
+      }
+    }
+  }, [status, messages])
+
+  // Cleanup watchdog on unmount.
+  useEffect(
+    () => () => {
+      if (watchdogRef.current) clearTimeout(watchdogRef.current)
+    },
+    [],
+  )
+
+  // Detect silent stream completion: the stream ended "normally" but no
+  // assistant response was produced. This catches cases where the upstream
+  // connection dies during reasoning (e.g., Cloudflare subrequest idle
+  // timeout) and the stream closes without delivering any content —
+  // possibly faster than the watchdog timeout.
+  useEffect(() => {
+    const wasLoading =
+      prevStatusRef.current === 'submitted' ||
+      prevStatusRef.current === 'streaming'
+    prevStatusRef.current = status
+
+    if (!wasLoading || status !== 'ready') return
+
+    // Brief delay for messages state to settle after stream ends
     const timer = setTimeout(() => {
-      console.warn(`[${provider}] Request timed out waiting for first token`)
-      stop()
-      setLocalError(
-        new Error(
-          'No response received — the model may have timed out during reasoning. Please try again.',
-        ),
-      )
-    }, SUBMITTED_TIMEOUT_MS)
+      const msgs = messagesRef.current
+      if (msgs.length === 0) return
+      const lastMsg = msgs[msgs.length - 1]
+      if (lastMsg.role !== 'assistant' || !getMessageText(lastMsg)) {
+        console.warn(
+          `[${provider}] Stream completed without producing a response`,
+        )
+        setLocalError(
+          new Error(
+            'No response received — the model may have timed out during reasoning. Please try again.',
+          ),
+        )
+      }
+    }, 200)
 
     return () => clearTimeout(timer)
-  }, [status, stop, provider])
+  }, [status, provider])
 
   // Clear local timeout error when a real stream starts or a new request
   // is initiated (status transitions away from the error state).

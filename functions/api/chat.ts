@@ -348,6 +348,7 @@ function withKeepAlive(response: Response): Response {
 
   let timer: ReturnType<typeof setInterval> | null = null
   let closed = false
+  let receivedDataChunks = 0
 
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
@@ -372,9 +373,15 @@ function withKeepAlive(response: Response): Response {
             if (done) {
               closed = true
               if (timer) clearInterval(timer)
+              if (receivedDataChunks === 0) {
+                console.warn(
+                  '[proxy] Stream ended without sending any data — upstream provider may have timed out during reasoning',
+                )
+              }
               controller.close()
               return
             }
+            receivedDataChunks++
             controller.enqueue(value)
           }
         } catch (err) {
